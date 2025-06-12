@@ -1,11 +1,83 @@
-
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import { GraduationCap, Wifi, WifiOff } from 'lucide-react';
 
 const MainLayout = () => {
-    return (
-        <div className="    flex flex-col items-center justify-center min-h-screen bg-gray-100">
-            <h1 className="text-3xl">Main Layout</h1>
-        </div>
-    )
-}
+    // Estado de conexión (puedes conectarlo a tu lógica de PWA)
+    const [isOnline, setIsOnline] = React.useState(navigator.onLine);
 
-export default MainLayout
+    React.useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    return (
+        <div className="min-h-screen bg-neutral-50 flex flex-col">
+            {/* Header */}
+            <header className="bg-white shadow-sm border-b border-neutral-200 sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        {/* Logo y título */}
+                        <div className="flex items-center space-x-3">
+                            <div className="bg-primary-600 p-2 rounded-xl shadow-sm">
+                                <GraduationCap className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold text-neutral-900">Evaluación Docente</h1>
+                                <p className="text-xs text-neutral-600 hidden sm:block">Sistema de Evaluación Docente</p>
+                            </div>
+                        </div>
+
+                        {/* Estado de conexión y usuario */}
+                        <div className="flex items-center space-x-4">
+                            {/* Indicador de conexión */}
+                            <div className="flex items-center space-x-2">
+                                {isOnline ? (
+                                    <div className="flex items-center space-x-1 text-secondary-600">
+                                        <Wifi size={16} />
+                                        <span className="text-xs font-medium hidden sm:inline">En línea</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center space-x-1 text-warning-600">
+                                        <WifiOff size={16} />
+                                        <span className="text-xs font-medium hidden sm:inline">Sin conexión</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            {/* Contenido principal */}
+            <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2">
+                <Outlet />
+            </main>
+
+            {/* Footer */}
+            <footer className="bg-white border-t border-neutral-200 mt-auto">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
+                    <div className="flex justify-between items-center space-y-3 sm:space-y-0">
+                        {/* Información de la app */}
+                        <div className="flex items-center space-x-3">
+                            <p className="text-sm text-neutral-600">©2025 Evaluación Docente</p>
+                        </div>
+                        <div className="">
+                            <span className='text-neutral-500 text-xs'>IndexedDB</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    );
+};
+
+export default MainLayout;

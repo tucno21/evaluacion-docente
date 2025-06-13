@@ -35,7 +35,6 @@ export const initDB = (): Promise<IDBDatabase> => {
             if (!db.objectStoreNames.contains(STORES.students)) {
                 const studentStore = db.createObjectStore(STORES.students, { keyPath: 'id', autoIncrement: true });
                 studentStore.createIndex('classroomId', 'classroomId', { unique: false });
-                studentStore.createIndex('name', 'name', { unique: false });
             }
 
             if (!db.objectStoreNames.contains(STORES.evaluationMatrices)) {

@@ -10,9 +10,7 @@ export interface Classroom {
 export interface Student {
     id: number;
     classroomId: number;
-    name: string;
-    lastName: string;
-    fullName: string; // Computed name + lastName for display
+    fullName: string;
 }
 
 export interface EvaluationCriterion {
@@ -44,5 +42,5 @@ export interface StudentEvaluation {
 
 // Type for form submissions
 export type ClassroomFormData = Omit<Classroom, 'id' | 'createdAt'>;
-export type StudentFormData = Omit<Student, 'id' | 'fullName'>;
+export type StudentFormData = Omit<Student, 'id'>;
 export type EvaluationMatrixFormData = Omit<EvaluationMatrix, 'id'>;

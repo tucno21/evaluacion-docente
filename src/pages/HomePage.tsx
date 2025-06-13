@@ -3,11 +3,14 @@ import { Plus, BookOpen, Users, Calendar, X, School, Trash2 } from 'lucide-react
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import type { Classroom } from '../types/types';
+import ModalAlert from '../components/ModalAlert'; // Importar el nuevo componente
 
 const HomePage = () => {
     const navigate = useNavigate();
     const { classrooms, loadClassrooms, addNewClassroom, deleteClassroom } = useAppStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false); // Estado para el modal de eliminación
+    const [classroomToDeleteId, setClassroomToDeleteId] = useState<string | null>(null); // ID del aula a eliminar
     const [formData, setFormData] = useState({
         name: '',
         grade: '',
@@ -91,11 +94,23 @@ const HomePage = () => {
         navigate(`/grade/${classroomId}`);
     };
 
-    const handleDeleteClassroom = async (e: React.MouseEvent, classroomId: string) => {
-        e.stopPropagation(); // Prevent triggering goToGrade
-        if (window.confirm('¿Estás seguro de que quieres eliminar esta aula?')) {
-            await deleteClassroom(classroomId);
+    const handleDeleteClassroom = (e: React.MouseEvent, classroomId: string) => {
+        e.stopPropagation(); // Evitar que se dispare goToGrade
+        setClassroomToDeleteId(classroomId);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDeleteClassroom = async () => {
+        if (classroomToDeleteId) {
+            await deleteClassroom(classroomToDeleteId);
+            setShowDeleteModal(false);
+            setClassroomToDeleteId(null);
         }
+    };
+
+    const closeDeleteModal = () => {
+        setShowDeleteModal(false);
+        setClassroomToDeleteId(null);
     };
 
     useEffect(() => {
@@ -278,6 +293,17 @@ const HomePage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Modal de Alerta para Eliminación */}
+            <ModalAlert
+                isOpen={showDeleteModal}
+                onClose={closeDeleteModal}
+                onConfirm={confirmDeleteClassroom}
+                title="Confirmar Eliminación"
+                message="¿Estás seguro de que quieres eliminar esta aula? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+            />
         </div>
     );
 };

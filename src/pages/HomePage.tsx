@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, BookOpen, Users, Calendar, X, School } from 'lucide-react';
+import { Plus, BookOpen, Users, Calendar, X, School, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import type { Classroom } from '../types/types';
 
 const HomePage = () => {
     const navigate = useNavigate();
-    const { classrooms, loadClassrooms, addNewClassroom } = useAppStore();
+    const { classrooms, loadClassrooms, addNewClassroom, deleteClassroom } = useAppStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -87,8 +87,15 @@ const HomePage = () => {
         setErrors({});
     };
 
-    const goToGrade = (classroomId: number) => {
+    const goToGrade = (classroomId: string) => {
         navigate(`/grade/${classroomId}`);
+    };
+
+    const handleDeleteClassroom = async (e: React.MouseEvent, classroomId: string) => {
+        e.stopPropagation(); // Prevent triggering goToGrade
+        if (window.confirm('¿Estás seguro de que quieres eliminar esta aula?')) {
+            await deleteClassroom(classroomId);
+        }
     };
 
     useEffect(() => {
@@ -129,8 +136,17 @@ const HomePage = () => {
                             onClick={() => goToGrade(classroom.id)}
                         >
                             <div className="flex items-start justify-between mb-4">
-                                <div className="bg-primary-100 p-3 rounded-lg">
-                                    <BookOpen className="h-6 w-6 text-primary-600" />
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-primary-100 p-3 rounded-lg">
+                                        <BookOpen className="h-6 w-6 text-primary-600" />
+                                    </div>
+                                    <button
+                                        onClick={(e) => handleDeleteClassroom(e, classroom.id)}
+                                        className="text-neutral-400 hover:text-error-600 transition-colors p-2 rounded-full hover:bg-neutral-100"
+                                        aria-label="Eliminar aula"
+                                    >
+                                        <Trash2 className="h-5 w-5" />
+                                    </button>
                                 </div>
                                 <div className="text-right">
                                     <span className="bg-accent-100 text-accent-700 text-xs font-medium px-2 py-1 rounded-full">

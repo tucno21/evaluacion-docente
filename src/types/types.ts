@@ -1,6 +1,7 @@
 // src/lib/types.ts
+// src/lib/types.ts
 export interface Classroom {
-    id: number;
+    id: string;
     name: string;
     grade: string;
     section: string;
@@ -8,35 +9,35 @@ export interface Classroom {
 }
 
 export interface Student {
-    id: number;
-    classroomId: number;
+    id: string;
+    classroomId: string;
     fullName: string;
 }
 
 export interface EvaluationCriterion {
-    id: number;
+    id: string;
     name: string;
 }
 
 export type AchievementLevel = 'C' | 'B' | 'A' | 'AD';
 
 export interface EvaluationMatrix {
-    id: number;
-    classroomId: number;
+    id: string;
+    classroomId: string;
     name: string;
     date: string;
     criteria: EvaluationCriterion[];
 }
 
 export interface CriterionEvaluation {
-    criterionId: number;
+    criterionId: string;
     level: AchievementLevel;
 }
 
 export interface StudentEvaluation {
-    id: number;
-    studentId: number;
-    matrixId: number;
+    id: string;
+    studentId: string;
+    matrixId: string;
     criteriaEvaluations: CriterionEvaluation[];
 }
 

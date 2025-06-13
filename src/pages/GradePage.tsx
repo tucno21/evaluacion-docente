@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { Users, Plus, Calendar, ClipboardList, X, Trash2, BookOpen } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
-import type { EvaluationMatrix, EvaluationCriterion } from '../types/types';
+import type { EvaluationMatrix, EvaluationCriterion, Classroom } from '../types/types';
+import { v4 as uuidv4 } from 'uuid'; // Import uuid
+import { getClassroomById } from '../utils/indexDB'; // Import getClassroomById
 
 const GradePage = () => {
     const { gradeId } = useParams<{ gradeId: string }>();
@@ -14,9 +16,10 @@ const GradePage = () => {
         date: ''
     });
     const [criteria, setCriteria] = useState<EvaluationCriterion[]>([
-        { id: 1, name: '' }
+        { id: uuidv4(), name: '' } // Use uuid for initial criterion ID
     ]);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [classroom, setClassroom] = useState<Classroom | null>(null); // New state for classroom data
 
     // Validaciones
     const validateForm = () => {
@@ -41,7 +44,7 @@ const GradePage = () => {
         }
 
         // Validar criterios
-        const validCriteria = criteria.filter(c => c.name.trim() !== '');
+        const validCriteria: EvaluationCriterion[] = criteria.filter(c => c.name.trim() !== '');
         if (validCriteria.length === 0) {
             newErrors.criteria = 'Debe agregar al menos un criterio de evaluación';
         } else {
@@ -66,13 +69,13 @@ const GradePage = () => {
     const handleSubmit = async () => {
         if (!validateForm()) return;
 
-        const validCriteria = criteria.filter(c => c.name.trim() !== '');
+        const validCriteria: EvaluationCriterion[] = criteria.filter(c => c.name.trim() !== '');
 
         const newMatrix: Omit<EvaluationMatrix, 'id'> = {
-            classroomId: Number(gradeId),
+            classroomId: gradeId!, // Use non-null assertion here
             name: formData.name.trim(),
             date: formData.date,
-            criteria: validCriteria.map(c => ({ id: c.id, name: c.name.trim() })),
+            criteria: validCriteria.map((c: EvaluationCriterion) => ({ id: c.id!, name: c.name.trim() })), // Use non-null assertion
         };
 
         const id = await addNewEvaluationMatrix(newMatrix);
@@ -84,7 +87,7 @@ const GradePage = () => {
     const closeModal = () => {
         setIsModalOpen(false);
         setFormData({ name: '', date: '' });
-        setCriteria([{ id: 1, name: '' }]);
+        setCriteria([{ id: uuidv4(), name: '' }]); // Use uuid for initial criterion ID
         setErrors({});
     };
 
@@ -95,7 +98,7 @@ const GradePage = () => {
         }
     };
 
-    const handleCriteriaChange = (id: number, value: string) => {
+    const handleCriteriaChange = (id: string, value: string) => {
         setCriteria(prev => prev.map(c =>
             c.id === id ? { ...c, name: value } : c
         ));
@@ -106,12 +109,11 @@ const GradePage = () => {
 
     const addCriteria = () => {
         if (criteria.length < 5) {
-            const newId = criteria.length > 0 ? Math.max(...criteria.map(c => c.id)) + 1 : 1;
-            setCriteria(prev => [...prev, { id: newId, name: '' }]);
+            setCriteria(prev => [...prev, { id: uuidv4(), name: '' }]); // Use uuid for new criterion ID
         }
     };
 
-    const removeCriteria = (id: number) => {
+    const removeCriteria = (id: string) => {
         if (criteria.length > 1) {
             setCriteria(prev => prev.filter(c => c.id !== id));
         }
@@ -121,7 +123,7 @@ const GradePage = () => {
         navigate(`/grade/${gradeId}/students`);
     };
 
-    const goToEvaluation = (matrixId: number) => {
+    const goToEvaluation = (matrixId: string) => {
         navigate(`/grade/${gradeId}/matrix/${matrixId}/evaluate`);
     };
 
@@ -130,7 +132,12 @@ const GradePage = () => {
 
     useEffect(() => {
         if (gradeId) {
-            loadMatricesByClassroom(Number(gradeId));
+            loadMatricesByClassroom(gradeId); // Pass gradeId directly as string
+            const fetchClassroom = async () => {
+                const fetchedClassroom = await getClassroomById(gradeId);
+                setClassroom(fetchedClassroom || null);
+            };
+            fetchClassroom();
         }
     }, [gradeId, loadMatricesByClassroom]);
 
@@ -144,7 +151,7 @@ const GradePage = () => {
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold text-neutral-900">
-                            Aula {gradeId}
+                            {classroom ? `Aula ${classroom.name} - ${classroom.grade}° ${classroom.section}` : 'Cargando aula...'}
                         </h1>
                         <p className="text-neutral-600">
                             Gestiona estudiantes y matrices de evaluación

@@ -5,7 +5,7 @@ import { saveAs } from 'file-saver';
 import { useAppStore } from '../store/useAppStore'; // Import useAppStore
 
 // Mock de useParams para el ejemplo
-const mockParams = { gradeId: '5A-12345' };
+const mockParams = { gradeId: 'classroom-123' }; // Changed to a string ID for consistency
 
 // Mock de useNavigate para el ejemplo
 const mockNavigate = (path: string) => {
@@ -19,9 +19,9 @@ const StudentsPage = () => {
     // En tu proyecto real, usa: const navigate = useNavigate();
     const navigate = mockNavigate;
     // En tu proyecto real, usa: const { gradeId } = useParams<{ gradeId: string }>();
-    const { gradeId } = mockParams; // gradeId is a string, need to parse to number for classroomId
+    const { gradeId } = mockParams; // gradeId is already a string, use directly
 
-    const classroomId = parseInt(gradeId.split('-')[1] || '0'); // Assuming gradeId is like "5A-12345" and 12345 is the ID
+    const classroomId = gradeId; // Use gradeId directly as classroomId
 
     const { students, loadStudentsByClassroom, addManyStudents, classrooms, loadClassrooms } = useAppStore();
 
@@ -97,9 +97,10 @@ const StudentsPage = () => {
             // Assign the classroomId to each imported student
             const studentsToSave = importedStudents.map(s => ({
                 ...s,
-                classroomId: classroomId,
+                classroomId: classroomId, // classroomId is already a string
             }));
 
+            console.log('Importing students with classroomId:', classroomId);
             await addManyStudents(studentsToSave);
 
             setIsProcessing(false);

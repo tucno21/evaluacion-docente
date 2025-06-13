@@ -30,7 +30,7 @@ export const parseExcelStudents = (file: File): Promise<Omit<Student, 'id'>[]> =
                     const fullName = row.nombreCompleto || '';
 
                     return {
-                        classroomId: 0, // This will be set by the component that calls this function
+                        classroomId: '', // This will be set by the component that calls this function
                         fullName: fullName
                     };
                 });

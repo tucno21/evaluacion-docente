@@ -27,7 +27,7 @@ const router = createBrowserRouter([
                 element: <StudentsPage />,
             },
             {
-                path: 'grade/:gradeId/matrix/:matrixId/evaluate',
+                path: 'grade/:classroomId/matrix/:matrixId/evaluate',
                 element: <EvaluationPage />,
             },
         ],

@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import type { Classroom, Student, EvaluationMatrix, StudentEvaluation } from "../types/types";
 
 // IndexedDB configuration
@@ -28,23 +29,23 @@ export const initDB = (): Promise<IDBDatabase> => {
 
             // Create object stores if they don't exist
             if (!db.objectStoreNames.contains(STORES.classrooms)) {
-                const classroomStore = db.createObjectStore(STORES.classrooms, { keyPath: 'id', autoIncrement: true });
+                const classroomStore = db.createObjectStore(STORES.classrooms, { keyPath: 'id' });
                 classroomStore.createIndex('name', 'name', { unique: false });
             }
 
             if (!db.objectStoreNames.contains(STORES.students)) {
-                const studentStore = db.createObjectStore(STORES.students, { keyPath: 'id', autoIncrement: true });
+                const studentStore = db.createObjectStore(STORES.students, { keyPath: 'id' });
                 studentStore.createIndex('classroomId', 'classroomId', { unique: false });
             }
 
             if (!db.objectStoreNames.contains(STORES.evaluationMatrices)) {
-                const matricesStore = db.createObjectStore(STORES.evaluationMatrices, { keyPath: 'id', autoIncrement: true });
+                const matricesStore = db.createObjectStore(STORES.evaluationMatrices, { keyPath: 'id' });
                 matricesStore.createIndex('classroomId', 'classroomId', { unique: false });
                 matricesStore.createIndex('name', 'name', { unique: false });
             }
 
             if (!db.objectStoreNames.contains(STORES.studentEvaluations)) {
-                const evaluationsStore = db.createObjectStore(STORES.studentEvaluations, { keyPath: 'id', autoIncrement: true });
+                const evaluationsStore = db.createObjectStore(STORES.studentEvaluations, { keyPath: 'id' });
                 evaluationsStore.createIndex('matrixId', 'matrixId', { unique: false });
                 evaluationsStore.createIndex('studentId', 'studentId', { unique: false });
             }
@@ -53,17 +54,19 @@ export const initDB = (): Promise<IDBDatabase> => {
 };
 
 // Generic function to add item to a store
-export const addItem = <T>(storeName: string, item: T): Promise<number> => {
+export const addItem = <T extends { id?: string }>(storeName: string, item: T): Promise<string> => {
     return new Promise(async (resolve, reject) => {
         try {
             const db = await initDB();
             const tx = db.transaction(storeName, 'readwrite');
             const store = tx.objectStore(storeName);
 
-            const request = store.add(item);
+            const itemToAdd = { ...item, id: item.id || uuidv4() };
+
+            const request = store.add(itemToAdd);
 
             request.onsuccess = () => {
-                resolve(request.result as number);
+                resolve(itemToAdd.id as string);
             };
 
             request.onerror = () => {
@@ -107,7 +110,7 @@ export const getAllItems = <T>(storeName: string): Promise<T[]> => {
 };
 
 // Get item by id from a store
-export const getItemById = <T>(storeName: string, id: number): Promise<T | undefined> => {
+export const getItemById = <T>(storeName: string, id: string): Promise<T | undefined> => {
     return new Promise(async (resolve, reject) => {
         try {
             const db = await initDB();
@@ -134,7 +137,7 @@ export const getItemById = <T>(storeName: string, id: number): Promise<T | undef
 };
 
 // Update item in a store
-export const updateItem = <T>(storeName: string, item: T): Promise<void> => {
+export const updateItem = <T extends { id: string }>(storeName: string, item: T): Promise<void> => {
     return new Promise(async (resolve, reject) => {
         try {
             const db = await initDB();
@@ -161,7 +164,7 @@ export const updateItem = <T>(storeName: string, item: T): Promise<void> => {
 };
 
 // Delete item from a store
-export const deleteItem = (storeName: string, id: number): Promise<void> => {
+export const deleteItem = (storeName: string, id: string): Promise<void> => {
     return new Promise(async (resolve, reject) => {
         try {
             const db = await initDB();
@@ -191,7 +194,7 @@ export const deleteItem = (storeName: string, id: number): Promise<void> => {
 export const getItemsByIndex = <T>(
     storeName: string,
     indexName: string,
-    value: string | number
+    value: string
 ): Promise<T[]> => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -220,15 +223,15 @@ export const getItemsByIndex = <T>(
 };
 
 // Classroom-specific functions
-export const addClassroom = (classroom: Omit<Classroom, 'id'>): Promise<number> => {
-    return addItem<Omit<Classroom, 'id'>>(STORES.classrooms, classroom);
+export const addClassroom = (classroom: Omit<Classroom, 'id'>): Promise<string> => {
+    return addItem<Classroom>(STORES.classrooms, classroom as Classroom);
 };
 
 export const getAllClassrooms = (): Promise<Classroom[]> => {
     return getAllItems<Classroom>(STORES.classrooms);
 };
 
-export const getClassroomById = (id: number): Promise<Classroom | undefined> => {
+export const getClassroomById = (id: string): Promise<Classroom | undefined> => {
     return getItemById<Classroom>(STORES.classrooms, id);
 };
 
@@ -236,17 +239,17 @@ export const updateClassroom = (classroom: Classroom): Promise<void> => {
     return updateItem<Classroom>(STORES.classrooms, classroom);
 };
 
-export const deleteClassroom = (id: number): Promise<void> => {
+export const deleteClassroom = (id: string): Promise<void> => {
     return deleteItem(STORES.classrooms, id);
 };
 
 // Student-specific functions
-export const addStudent = (student: Omit<Student, 'id'>): Promise<number> => {
-    return addItem<Omit<Student, 'id'>>(STORES.students, student);
+export const addStudent = (student: Omit<Student, 'id'>): Promise<string> => {
+    return addItem<Student>(STORES.students, student as Student);
 };
 
-export const addMultipleStudents = async (students: Omit<Student, 'id'>[]): Promise<number[]> => {
-    const ids: number[] = [];
+export const addMultipleStudents = async (students: Omit<Student, 'id'>[]): Promise<string[]> => {
+    const ids: string[] = [];
 
     for (const student of students) {
         const id = await addStudent(student);
@@ -256,7 +259,7 @@ export const addMultipleStudents = async (students: Omit<Student, 'id'>[]): Prom
     return ids;
 };
 
-export const getStudentsByClassroomId = (classroomId: number): Promise<Student[]> => {
+export const getStudentsByClassroomId = (classroomId: string): Promise<Student[]> => {
     return getItemsByIndex<Student>(STORES.students, 'classroomId', classroomId);
 };
 
@@ -264,20 +267,20 @@ export const updateStudent = (student: Student): Promise<void> => {
     return updateItem<Student>(STORES.students, student);
 };
 
-export const deleteStudent = (id: number): Promise<void> => {
+export const deleteStudent = (id: string): Promise<void> => {
     return deleteItem(STORES.students, id);
 };
 
 // Matrix-specific functions
-export const addEvaluationMatrix = (matrix: Omit<EvaluationMatrix, 'id'>): Promise<number> => {
-    return addItem<Omit<EvaluationMatrix, 'id'>>(STORES.evaluationMatrices, matrix);
+export const addEvaluationMatrix = (matrix: Omit<EvaluationMatrix, 'id'>): Promise<string> => {
+    return addItem<EvaluationMatrix>(STORES.evaluationMatrices, matrix as EvaluationMatrix);
 };
 
-export const getMatricesByClassroomId = (classroomId: number): Promise<EvaluationMatrix[]> => {
+export const getMatricesByClassroomId = (classroomId: string): Promise<EvaluationMatrix[]> => {
     return getItemsByIndex<EvaluationMatrix>(STORES.evaluationMatrices, 'classroomId', classroomId);
 };
 
-export const getMatrixById = (id: number): Promise<EvaluationMatrix | undefined> => {
+export const getMatrixById = (id: string): Promise<EvaluationMatrix | undefined> => {
     return getItemById<EvaluationMatrix>(STORES.evaluationMatrices, id);
 };
 
@@ -285,16 +288,16 @@ export const updateMatrix = (matrix: EvaluationMatrix): Promise<void> => {
     return updateItem<EvaluationMatrix>(STORES.evaluationMatrices, matrix);
 };
 
-export const deleteMatrix = (id: number): Promise<void> => {
+export const deleteMatrix = (id: string): Promise<void> => {
     return deleteItem(STORES.evaluationMatrices, id);
 };
 
 // Evaluation-specific functions
-export const addStudentEvaluation = (evaluation: Omit<StudentEvaluation, 'id'>): Promise<number> => {
-    return addItem<Omit<StudentEvaluation, 'id'>>(STORES.studentEvaluations, evaluation);
+export const addStudentEvaluation = (evaluation: Omit<StudentEvaluation, 'id'>): Promise<string> => {
+    return addItem<StudentEvaluation>(STORES.studentEvaluations, evaluation as StudentEvaluation);
 };
 
-export const getEvaluationsByMatrixId = (matrixId: number): Promise<StudentEvaluation[]> => {
+export const getEvaluationsByMatrixId = (matrixId: string): Promise<StudentEvaluation[]> => {
     return getItemsByIndex<StudentEvaluation>(STORES.studentEvaluations, 'matrixId', matrixId);
 };
 
@@ -303,8 +306,8 @@ export const updateStudentEvaluation = (evaluation: StudentEvaluation): Promise<
 };
 
 export const getStudentEvaluationByMatrixAndStudent = async (
-    matrixId: number,
-    studentId: number
+    matrixId: string,
+    studentId: string
 ): Promise<StudentEvaluation | undefined> => {
     const evaluations = await getEvaluationsByMatrixId(matrixId);
     return evaluations.find(evaluation => evaluation.studentId === studentId);

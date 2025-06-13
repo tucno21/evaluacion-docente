@@ -35,28 +35,28 @@ interface AppState {
 
     // Classroom actions
     loadClassrooms: () => Promise<void>;
-    addNewClassroom: (classroom: Omit<Classroom, 'id'>) => Promise<number | undefined>;
+    addNewClassroom: (classroom: Omit<Classroom, 'id'>) => Promise<string | undefined>;
     updateExistingClassroom: (classroom: Classroom) => Promise<void>;
-    removeClassroom: (id: number) => Promise<void>;
+    deleteClassroom: (id: string) => Promise<void>;
 
     // Student actions
-    loadStudentsByClassroom: (classroomId: number) => Promise<void>;
-    addNewStudent: (student: Omit<Student, 'id'>) => Promise<number | undefined>;
-    addManyStudents: (students: Omit<Student, 'id'>[]) => Promise<number[] | undefined>;
+    loadStudentsByClassroom: (classroomId: string) => Promise<void>;
+    addNewStudent: (student: Omit<Student, 'id'>) => Promise<string | undefined>;
+    addManyStudents: (students: Omit<Student, 'id'>[]) => Promise<string[] | undefined>;
     updateExistingStudent: (student: Student) => Promise<void>;
-    removeStudent: (id: number) => Promise<void>;
+    removeStudent: (id: string) => Promise<void>;
 
     // Evaluation Matrix actions
-    loadMatricesByClassroom: (classroomId: number) => Promise<void>;
-    addNewEvaluationMatrix: (matrix: Omit<EvaluationMatrix, 'id'>) => Promise<number | undefined>;
+    loadMatricesByClassroom: (classroomId: string) => Promise<void>;
+    addNewEvaluationMatrix: (matrix: Omit<EvaluationMatrix, 'id'>) => Promise<string | undefined>;
     updateExistingMatrix: (matrix: EvaluationMatrix) => Promise<void>;
-    removeMatrix: (id: number) => Promise<void>;
+    removeMatrix: (id: string) => Promise<void>;
 
     // Student Evaluation actions
-    loadEvaluationsByMatrix: (matrixId: number) => Promise<void>;
-    addNewStudentEvaluation: (evaluation: Omit<StudentEvaluation, 'id'>) => Promise<number | undefined>;
+    loadEvaluationsByMatrix: (matrixId: string) => Promise<void>;
+    addNewStudentEvaluation: (evaluation: Omit<StudentEvaluation, 'id'>) => Promise<string | undefined>;
     updateExistingStudentEvaluation: (evaluation: StudentEvaluation) => Promise<void>;
-    getStudentEvaluation: (matrixId: number, studentId: number) => Promise<StudentEvaluation | undefined>;
+    getStudentEvaluation: (matrixId: string, studentId: string) => Promise<StudentEvaluation | undefined>;
 }
 
 export const useAppStore = create<AppState>((set, _get) => ({
@@ -110,7 +110,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
             set({ error: error.message, loading: false });
         }
     },
-    removeClassroom: async (id) => {
+    deleteClassroom: async (id) => {
         set({ loading: true, error: null });
         try {
             await deleteClassroom(id);

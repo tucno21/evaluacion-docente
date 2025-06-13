@@ -11,7 +11,6 @@ const EvaluationPage = () => {
     const classroomId = classroomIdParam || '';
     const matrixId = matrixIdParam || '';
 
-
     const {
         classrooms,
         loadClassrooms,
@@ -34,8 +33,7 @@ const EvaluationPage = () => {
 
     useEffect(() => {
         loadClassrooms();
-        // Load matrices first to get the currentMatrix and its classroomId
-        if (classroomId) { // Still load matrices by the URL classroomId initially
+        if (classroomId) {
             loadMatricesByClassroom(classroomId);
         }
         if (matrixId) {
@@ -44,28 +42,25 @@ const EvaluationPage = () => {
     }, [classroomId, matrixId, loadClassrooms, loadMatricesByClassroom, loadEvaluationsByMatrix]);
 
     useEffect(() => {
-        // Once currentMatrix is loaded, use its classroomId to load students
         if (currentMatrix && currentMatrix.classroomId) {
             loadStudentsByClassroom(currentMatrix.classroomId);
         }
     }, [currentMatrix, loadStudentsByClassroom]);
 
     useEffect(() => {
-        // Initialize evaluationsState once students and existing evaluations are loaded
         if (students.length > 0 && currentMatrix && studentEvaluations) {
             const initialEvaluations: StudentEvaluation[] = students.map(student => {
                 const existingEvaluation = studentEvaluations.find(se => se.studentId === student.id);
                 if (existingEvaluation) {
                     return existingEvaluation;
                 } else {
-                    // Create a new evaluation object for students without existing evaluations
                     return {
-                        id: '', // Will be set by IndexedDB
+                        id: '',
                         studentId: student.id,
                         matrixId: matrixId,
                         criteriaEvaluations: currentMatrix.criteria.map(criterion => ({
                             criterionId: criterion.id,
-                            level: '' as AchievementLevel // No default level selected
+                            level: '' as AchievementLevel
                         }))
                     };
                 }
@@ -75,7 +70,6 @@ const EvaluationPage = () => {
     }, [students, currentMatrix, studentEvaluations, matrixId]);
 
     const handleLevelChange = async (studentId: string, criterionId: string, level: AchievementLevel) => {
-        // Find the student evaluation to update
         const studentEvaluationToUpdate = evaluationsState.find((se: StudentEvaluation) => se.studentId === studentId);
 
         if (!studentEvaluationToUpdate) {
@@ -83,7 +77,6 @@ const EvaluationPage = () => {
             return;
         }
 
-        // Create a new object for the updated criteria
         const updatedCriteria = studentEvaluationToUpdate.criteriaEvaluations.map((ce: CriterionEvaluation) => {
             if (ce.criterionId === criterionId) {
                 return { ...ce, level };
@@ -91,27 +84,21 @@ const EvaluationPage = () => {
             return ce;
         });
 
-        // Create the updated student evaluation object
         const updatedEvaluation: StudentEvaluation = {
             ...studentEvaluationToUpdate,
             criteriaEvaluations: updatedCriteria
         };
 
-        // Update the local state
         setEvaluationsState(prevEvaluations =>
             prevEvaluations.map((se: StudentEvaluation) => (se.studentId === studentId ? updatedEvaluation : se))
         );
 
-        // Now, save the updatedEvaluation to IndexedDB
         if (!updatedEvaluation.id) {
-            // If it's a new evaluation, add it
-            const newId = await addNewStudentEvaluation(updatedEvaluation) || ''; // Ensure newId is string
-            // Update the local state with the new ID from IndexedDB
+            const newId = await addNewStudentEvaluation(updatedEvaluation) || '';
             setEvaluationsState(prevEvaluations =>
                 prevEvaluations.map((se: StudentEvaluation) => (se.studentId === studentId ? { ...updatedEvaluation, id: newId } : se))
             );
         } else {
-            // If it's an existing evaluation, update it
             try {
                 await updateExistingStudentEvaluation(updatedEvaluation);
             } catch (e: any) {
@@ -137,100 +124,136 @@ const EvaluationPage = () => {
     }
 
     return (
-        <div className="min-h-full p-6 bg-neutral-100">
-            {/* Header */}
-            <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-neutral-200">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-3">
-                        <button
-                            onClick={goBack}
-                            className="text-neutral-600 hover:text-neutral-900 transition-colors"
-                        >
-                            ←
-                        </button>
-                        <div className="bg-primary-100 p-3 rounded-xl">
-                            <ClipboardList className="h-8 w-8 text-primary-600" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-neutral-900">
-                                Evaluación - {currentMatrix.name}
-                            </h1>
-                            <p className="text-neutral-600">
-                                Clase: {currentClassroom.name} {currentClassroom.grade}-{currentClassroom.section}
-                            </p>
-                        </div>
+        <div className="min-h-full p-1 sm:p-4 bg-neutral-50">
+            {/* Header compacto */}
+            <div className="mb-2 bg-white p-2 rounded shadow-sm">
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={goBack}
+                        className="text-neutral-600 hover:text-neutral-900 text-lg touch-manipulation"
+                    >
+                        ←
+                    </button>
+                    <ClipboardList className="h-4 w-4 text-primary-600" />
+                    <div className="flex-1 min-w-0">
+                        <h1 className="text-sm font-bold text-neutral-900 truncate">
+                            {currentMatrix.name}
+                        </h1>
+                        <p className="text-xs text-neutral-600">
+                            {currentClassroom.name} {currentClassroom.grade}-{currentClassroom.section}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Evaluation Grid */}
-            <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-neutral-200">
-                <table className="min-w-full divide-y divide-neutral-200">
-                    <thead className="bg-neutral-50">
-                        <tr>
-                            <th className="sticky left-0 bg-neutral-50 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider z-10">
-                                N°
-                            </th>
-                            <th className="sticky left-12 bg-neutral-50 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider z-10">
-                                Nombres y Apellidos de los Estudiantes
-                            </th>
+            {/* Contenedor con scroll horizontal */}
+            <div className="bg-white border border-neutral-300 rounded shadow-sm overflow-x-auto">
+                <div className="min-w-full">
+                    {/* Header */}
+                    <div className="bg-neutral-100 border-b border-neutral-300 flex">
+                        {/* Columna N° fija */}
+                        <div className="w-8 border-r border-neutral-300 p-1 text-center font-bold text-xs bg-neutral-100 sticky left-0 z-20 flex-shrink-0">
+                            N°
+                        </div>
+                        {/* Columna Nombres fija */}
+                        <div className="w-40 border-r border-neutral-300 p-1 text-left font-bold text-xs bg-neutral-100 sticky left-8 z-20 flex-shrink-0">
+                            NOMBRES Y APELLIDOS
+                        </div>
+                        {/* Columnas de criterios - ocupan el espacio restante */}
+                        <div className="flex flex-1 min-w-0">
                             {currentMatrix.criteria.map(criterion => (
-                                <th key={criterion.id} className="px-6 py-3 text-center text-xs font-medium text-neutral-500 uppercase tracking-wider border-l border-neutral-200">
-                                    {criterion.name}
-                                    <div className="flex justify-center mt-2 space-x-1">
-                                        {['C', 'B', 'A', 'AD'].map(level => (
-                                            <span key={level} className="text-xs font-semibold px-2 py-1 rounded-full bg-neutral-200 text-neutral-700">
-                                                {level}
-                                            </span>
-                                        ))}
+                                <div key={criterion.id} className="flex-1 min-w-20 border-r-2 border-black p-1 text-center bg-yellow-100">
+                                    <div className="text-xs leading-tight mb-1 font-bold break-words">{criterion.name}</div>
+                                    <div className="flex justify-center space-x-0.5">
+                                        <span className="bg-red-200 text-red-800 px-0.5 py-0.5 rounded text-xs font-bold">C</span>
+                                        <span className="bg-yellow-200 text-yellow-800 px-0.5 py-0.5 rounded text-xs font-bold">B</span>
+                                        <span className="bg-blue-200 text-blue-800 px-0.5 py-0.5 rounded text-xs font-bold">A</span>
+                                        <span className="bg-green-200 text-green-800 px-0.5 py-0.5 rounded text-xs font-bold">AD</span>
                                     </div>
-                                </th>
+                                </div>
                             ))}
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-neutral-200">
-                        {students.map((student, studentIndex) => {
-                            const studentEvaluation = evaluationsState.find(se => se.studentId === student.id);
-                            if (!studentEvaluation) return null; // Should not happen if initialEvaluations is correct
+                        </div>
+                    </div>
 
-                            // Original rendering logic for a row
-                            return (
-                                <tr key={student.id}>
-                                    <td className="sticky left-0 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 z-10">
-                                        {studentIndex + 1}
-                                    </td>
-                                    <td className="sticky left-12 bg-white px-6 py-4 whitespace-nowrap text-sm text-neutral-900 font-medium z-10">
-                                        {student.fullName}
-                                    </td>
+                    {/* Filas de estudiantes */}
+                    {students.map((student, studentIndex) => {
+                        const studentEvaluation = evaluationsState.find(se => se.studentId === student.id);
+                        if (!studentEvaluation) return null;
+
+                        return (
+                            <div key={student.id} className="flex hover:bg-neutral-50 border-b border-neutral-200">
+                                {/* Número fijo */}
+                                <div className="w-8 border-r border-neutral-300 p-1 text-center font-medium text-xs bg-white sticky left-0 z-10 flex-shrink-0">
+                                    {studentIndex + 1}
+                                </div>
+                                {/* Nombre fijo */}
+                                <div className="w-40 border-r border-neutral-300 p-1 text-left font-medium text-xs bg-white sticky left-8 z-10 flex-shrink-0">
+                                    <div className="truncate leading-tight">{student.fullName}</div>
+                                </div>
+                                {/* Celdas de evaluación - ocupan el espacio restante */}
+                                <div className="flex flex-1 min-w-0">
                                     {currentMatrix.criteria.map(criterion => {
                                         const criterionEvaluation = studentEvaluation?.criteriaEvaluations.find(ce => ce.criterionId === criterion.id);
-                                        const currentLevel = criterionEvaluation?.level || ''; // No default level selected
+                                        const currentLevel = criterionEvaluation?.level || '';
 
                                         return (
-                                            <td key={criterion.id} className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 border-l border-neutral-200">
-                                                <div className="flex justify-center space-x-2">
-                                                    {['C', 'B', 'A', 'AD'].map(level => (
-                                                        <label key={level} className="inline-flex items-center">
-                                                            <input
-                                                                type="radio"
-                                                                className="form-radio h-4 w-4 text-primary-600"
-                                                                name={`student-${student.id}-criterion-${criterion.id}`}
-                                                                value={level}
-                                                                checked={currentLevel === level}
-                                                                onChange={() => handleLevelChange(student.id, criterion.id, level as AchievementLevel)}
-                                                            />
-                                                            <span className="ml-1 text-neutral-700">{level}</span>
-                                                        </label>
-                                                    ))}
+                                            <div key={criterion.id} className="flex-1 min-w-20 border-r-2 border-black bg-white">
+                                                <div className="grid grid-cols-4 h-8">
+                                                    {['C', 'B', 'A', 'AD'].map((level, levelIndex) => {
+                                                        const isSelected = currentLevel === level;
+                                                        const bgColor = levelIndex === 0 ? 'hover:bg-red-50' :
+                                                            levelIndex === 1 ? 'hover:bg-yellow-50' :
+                                                                levelIndex === 2 ? 'hover:bg-blue-50' : 'hover:bg-green-50';
+
+                                                        return (
+                                                            <button
+                                                                key={level}
+                                                                className={`
+                                                                    h-8 border-r border-neutral-200 last:border-r-0
+                                                                    flex items-center justify-center text-xs font-bold
+                                                                    touch-manipulation active:scale-95 transition-all
+                                                                    ${bgColor}
+                                                                    ${isSelected ? 'bg-neutral-800 text-white' : 'text-neutral-400 hover:text-neutral-800'}
+                                                                `}
+                                                                onClick={() => handleLevelChange(student.id, criterion.id, level as AchievementLevel)}
+                                                                type="button"
+                                                            >
+                                                                {isSelected ? '✓' : level}
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
-                                            </td>
+                                            </div>
                                         );
                                     })}
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Leyenda */}
+            <div className="mt-2 bg-white p-2 rounded shadow-sm">
+                <div className="text-xs font-bold text-neutral-700 mb-1">CRITERIOS DE EVALUACIÓN</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-xs">
+                    <div className="flex items-center space-x-1">
+                        <span className="bg-red-200 text-red-800 px-1 py-0.5 rounded font-bold">C</span>
+                        <span>En inicio</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                        <span className="bg-yellow-200 text-yellow-800 px-1 py-0.5 rounded font-bold">B</span>
+                        <span>En proceso</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                        <span className="bg-blue-200 text-blue-800 px-1 py-0.5 rounded font-bold">A</span>
+                        <span>Logro esperado</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                        <span className="bg-green-200 text-green-800 px-1 py-0.5 rounded font-bold">AD</span>
+                        <span>Logro destacado</span>
+                    </div>
+                </div>
             </div>
         </div>
     );

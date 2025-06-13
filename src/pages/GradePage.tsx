@@ -142,19 +142,20 @@ const GradePage = () => {
         loadMatricesByClassroom(gradeId!);
     };
 
-    // Handler para copiar la matriz (la lógica de guardado la harás tú)
+    // Handler para copiar la matriz
     const handleCopySubmit = async () => {
         if (!validateCopyForm() || !matrixToCopy) return;
 
-        // Aquí iría tu lógica para guardar la matriz copiada en el aula y fecha seleccionadas
-        // Por ahora, solo cerramos el modal
-        console.log('Copiando matriz:', matrixToCopy.name);
-        console.log('Al aula:', copyFormData.classroomId);
-        console.log('Con fecha:', copyFormData.date);
+        const newMatrix: Omit<EvaluationMatrix, 'id'> = {
+            classroomId: copyFormData.classroomId,
+            name: matrixToCopy.name,
+            date: copyFormData.date,
+            criteria: matrixToCopy.criteria.map(c => ({ id: uuidv4(), name: c.name })), // Generate new IDs for criteria
+        };
 
+        await addNewEvaluationMatrix(newMatrix);
         closeCopyModal();
-        // Después de tu lógica de guardado, probablemente querrías recargar las matrices
-        // loadMatricesByClassroom(gradeId!);
+        navigate(`/grade/${copyFormData.classroomId}`); // Navigate to the new classroom's grade page
     };
 
     const closeModal = () => {

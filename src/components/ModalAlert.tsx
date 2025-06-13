@@ -24,7 +24,7 @@ const ModalAlert: React.FC<ModalAlertProps> = ({
 
     return (
         <div className="fixed inset-0 bg-neutral-900/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-sm w-full mx-auto">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto">
                 {/* Header del modal */}
                 <div className="flex items-center justify-between p-6 border-b border-neutral-200">
                     <h2 className="text-xl font-semibold text-neutral-900">

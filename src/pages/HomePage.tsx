@@ -214,7 +214,7 @@ const HomePage = () => {
             {/* Modal mejorado */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md lg:max-w-lg max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
                         <div className="flex items-center justify-between p-6 border-b border-neutral-100">
                             <div>

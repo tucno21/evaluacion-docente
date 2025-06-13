@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ClipboardList } from 'lucide-react';
 import type { StudentEvaluation, AchievementLevel, CriterionEvaluation } from '../types/types';
 import { useAppStore } from '../store/useAppStore';
+import { useHeaderStore } from '../store/useHeaderStore'; // Import useHeaderStore
 
 const EvaluationPage = () => {
     const { classroomId: classroomIdParam, matrixId: matrixIdParam } = useParams<{ classroomId: string; matrixId: string }>();
-    const navigate = useNavigate();
 
     const classroomId = classroomIdParam || '';
     const matrixId = matrixIdParam || '';
@@ -30,6 +30,7 @@ const EvaluationPage = () => {
     const currentMatrix = evaluationMatrices.find(m => m.id === matrixId);
 
     const [evaluationsState, setEvaluationsState] = useState<StudentEvaluation[]>([]);
+    const { setHeaderTitle } = useHeaderStore(); // Get setHeaderTitle from Zustand store
 
     useEffect(() => {
         loadClassrooms();
@@ -67,7 +68,12 @@ const EvaluationPage = () => {
             });
             setEvaluationsState(initialEvaluations);
         }
-    }, [students, currentMatrix, studentEvaluations, matrixId]);
+        if (currentMatrix) {
+            setHeaderTitle(currentMatrix.name);
+        } else {
+            setHeaderTitle('Cargando evaluación...');
+        }
+    }, [students, currentMatrix, studentEvaluations, matrixId, setHeaderTitle]);
 
     const handleLevelChange = async (studentId: string, criterionId: string, level: AchievementLevel) => {
         const studentEvaluationToUpdate = evaluationsState.find((se: StudentEvaluation) => se.studentId === studentId);
@@ -107,10 +113,6 @@ const EvaluationPage = () => {
         }
     };
 
-    const goBack = () => {
-        navigate(`/grade/${classroomId}`);
-    };
-
     if (loading) {
         return <div className="text-center py-12">Cargando...</div>;
     }
@@ -125,20 +127,13 @@ const EvaluationPage = () => {
 
     return (
         <div className="min-h-full p-1 sm:p-4 bg-neutral-50">
-            {/* Header compacto */}
+            {/* Header compacto - now handled by MainLayout */}
             <div className="mb-2 bg-white p-2 rounded shadow-sm">
                 <div className="flex items-center space-x-2">
-                    <button
-                        onClick={goBack}
-                        className="text-neutral-600 hover:text-neutral-900 text-lg touch-manipulation"
-                    >
-                        ←
-                    </button>
+                    {/* Back button is now handled by MainLayout */}
                     <ClipboardList className="h-4 w-4 text-primary-600" />
                     <div className="flex-1 min-w-0">
-                        <h1 className="text-sm font-bold text-neutral-900 truncate">
-                            {currentMatrix.name}
-                        </h1>
+                        {/* Title is now in MainLayout */}
                         <p className="text-xs text-neutral-600">
                             {currentClassroom.name} {currentClassroom.grade}-{currentClassroom.section}
                         </p>

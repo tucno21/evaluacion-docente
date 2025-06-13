@@ -3,25 +3,24 @@ import { Users, Download, Upload, X, FileSpreadsheet, Search } from 'lucide-reac
 import { generateExcelTemplate, parseExcelStudents } from '../utils/excel';
 import { saveAs } from 'file-saver';
 import { useAppStore } from '../store/useAppStore'; // Import useAppStore
-import { useParams, useNavigate } from 'react-router-dom'; // Import useParams and useNavigate
+import { useParams } from 'react-router-dom'; // Import useParams and useNavigate
 import { useEffect } from 'react'; // Import useEffect
-import type { Classroom } from '../types/types'; // Import Classroom type
 import { getClassroomById } from '../utils/indexDB'; // Import getClassroomById
+import { useHeaderStore } from '../store/useHeaderStore'; // Import useHeaderStore
 
 const StudentsPage = () => {
-    const navigate = useNavigate();
     const { gradeId } = useParams<{ gradeId: string }>();
 
     const classroomId = gradeId; // Use gradeId directly as classroomId
 
     const { students, loadStudentsByClassroom, addManyStudents, loadClassrooms } = useAppStore();
-    const [currentClassroom, setCurrentClassroom] = useState<Classroom | null>(null); // New state for classroom data
 
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const { setHeaderTitle } = useHeaderStore(); // Get setHeaderTitle from Zustand store
 
     useEffect(() => {
         loadClassrooms(); // Load all classrooms
@@ -29,11 +28,15 @@ const StudentsPage = () => {
             loadStudentsByClassroom(classroomId);
             const fetchClassroom = async () => {
                 const fetchedClassroom = await getClassroomById(classroomId);
-                setCurrentClassroom(fetchedClassroom || null);
+                if (fetchedClassroom) {
+                    setHeaderTitle(`Estudiantes - ${fetchedClassroom.name} ${fetchedClassroom.grade}° ${fetchedClassroom.section}`);
+                } else {
+                    setHeaderTitle('Cargando aula...');
+                }
             };
             fetchClassroom();
         }
-    }, [classroomId, loadStudentsByClassroom, loadClassrooms]);
+    }, [classroomId, loadStudentsByClassroom, loadClassrooms, setHeaderTitle]);
 
     // Filtrar estudiantes por término de búsqueda
     const filteredStudents = students.filter(student =>
@@ -118,29 +121,18 @@ const StudentsPage = () => {
         setIsProcessing(false);
     };
 
-    const goBack = () => {
-        navigate(`/grade/${gradeId}`);
-    };
-
     return (
         <div className="min-h-full">
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-3">
-                        <button
-                            onClick={goBack}
-                            className="text-neutral-600 hover:text-neutral-900 transition-colors"
-                        >
-                            ←
-                        </button>
+                        {/* Back button is now handled by MainLayout */}
                         <div className="bg-secondary-100 p-3 rounded-xl">
                             <Users className="h-8 w-8 text-secondary-600" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-neutral-900">
-                                {currentClassroom ? `Estudiantes - ${currentClassroom.name} ${currentClassroom.grade}° ${currentClassroom.section}` : 'Cargando aula...'}
-                            </h1>
+                            {/* Title is now in MainLayout */}
                             <p className="text-neutral-600">
                                 {students.length} estudiante{students.length !== 1 ? 's' : ''} registrado{students.length !== 1 ? 's' : ''}
                             </p>

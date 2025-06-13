@@ -1,10 +1,15 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { GraduationCap, Wifi, WifiOff } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { GraduationCap, Wifi, WifiOff, ArrowLeft, Home } from 'lucide-react';
+import { useHeaderStore } from '../store/useHeaderStore'; // Import the Zustand store
 
 const MainLayout = () => {
-    // Estado de conexión (puedes conectarlo a tu lógica de PWA)
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { headerTitle } = useHeaderStore(); // Get headerTitle from Zustand store
+
     const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+    const [showBackButton, setShowBackButton] = React.useState(false);
 
     React.useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -19,26 +24,51 @@ const MainLayout = () => {
         };
     }, []);
 
+    React.useEffect(() => {
+        // Show back button for any path not being the home page
+        setShowBackButton(location.pathname !== '/');
+    }, [location.pathname]);
+
+    const handleBack = () => {
+        navigate(-1); // Go back one step in history
+    };
+
+    const handleHome = () => {
+        navigate('/'); // Go to the home page
+    };
+
     return (
         <div className="min-h-screen bg-neutral-50 flex flex-col">
             {/* Header */}
             <header className="bg-white shadow-sm border-b border-neutral-200 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
-                        {/* Logo y título */}
+                        {/* Back button, Logo/Title, and Home button */}
                         <div className="flex items-center space-x-3">
+                            {showBackButton && (
+                                <button onClick={handleBack} className="p-2 rounded-full hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    <ArrowLeft className="h-6 w-6 text-neutral-700" />
+                                </button>
+                            )}
                             <div className="bg-primary-600 p-2 rounded-xl shadow-sm">
                                 <GraduationCap className="h-6 w-6 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-xl font-bold text-neutral-900">Evaluación Docente</h1>
+                                <h1 className="text-xl font-bold text-neutral-900">{headerTitle}</h1>
                                 <p className="text-xs text-neutral-600 hidden sm:block">Sistema de Evaluación Docente</p>
                             </div>
                         </div>
 
-                        {/* Estado de conexión y usuario */}
+                        {/* Connection status and Home button */}
                         <div className="flex items-center space-x-4">
-                            {/* Indicador de conexión */}
+                            {/* Home button */}
+                            {location.pathname !== '/' && (
+                                <button onClick={handleHome} className="p-2 rounded-full hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    <Home className="h-6 w-6 text-neutral-700" />
+                                </button>
+                            )}
+
+                            {/* Connection indicator */}
                             <div className="flex items-center space-x-2">
                                 {isOnline ? (
                                     <div className="flex items-center space-x-1 text-secondary-600">

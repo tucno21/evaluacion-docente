@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Users, Plus, Calendar, ClipboardList, X, Trash2, BookOpen, Pencil } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
-import type { EvaluationMatrix, EvaluationCriterion, Classroom } from '../types/types';
+import { useHeaderStore } from '../store/useHeaderStore'; // Import useHeaderStore
+import type { EvaluationMatrix, EvaluationCriterion } from '../types/types';
 import { v4 as uuidv4 } from 'uuid'; // Import uuid
 import { getClassroomById } from '../utils/indexDB'; // Import getClassroomById
 
@@ -20,8 +21,6 @@ const GradePage = () => {
         { id: uuidv4(), name: '' } // Use uuid for initial criterion ID
     ]);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [classroom, setClassroom] = useState<Classroom | null>(null); // New state for classroom data
-
     // Validaciones
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
@@ -163,29 +162,33 @@ const GradePage = () => {
     // Obtener fecha mínima (hoy)
     const today = new Date().toISOString().split('T')[0];
 
+    const { setHeaderTitle } = useHeaderStore(); // Get setHeaderTitle from Zustand store
+
     useEffect(() => {
         if (gradeId) {
             loadMatricesByClassroom(gradeId); // Pass gradeId directly as string
             const fetchClassroom = async () => {
                 const fetchedClassroom = await getClassroomById(gradeId);
-                setClassroom(fetchedClassroom || null);
+                if (fetchedClassroom) {
+                    setHeaderTitle(`Aula ${fetchedClassroom.name} - ${fetchedClassroom.grade}° ${fetchedClassroom.section}`);
+                } else {
+                    setHeaderTitle('Cargando aula...');
+                }
             };
             fetchClassroom();
         }
-    }, [gradeId, loadMatricesByClassroom]);
+    }, [gradeId, loadMatricesByClassroom, setHeaderTitle]);
 
     return (
         <div className="min-h-full">
-            {/* Header */}
+            {/* The header content is now managed by MainLayout */}
             <div className="mb-8">
                 <div className="flex items-center space-x-3 mb-4">
                     <div className="bg-primary-100 p-3 rounded-xl">
                         <BookOpen className="h-8 w-8 text-primary-600" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-neutral-900">
-                            {classroom ? `Aula ${classroom.name} - ${classroom.grade}° ${classroom.section}` : 'Cargando aula...'}
-                        </h1>
+                        {/* Title is now in MainLayout */}
                         <p className="text-neutral-600">
                             Gestiona estudiantes y matrices de evaluación
                         </p>

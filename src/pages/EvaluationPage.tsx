@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, ClipboardList, Save } from 'lucide-react';
-import type { Student, EvaluationMatrix, StudentEvaluation, CriterionEvaluation, AchievementLevel } from '../types/types';
+import { ClipboardList, Save } from 'lucide-react';
+import type { StudentEvaluation, AchievementLevel } from '../types/types';
 import { useAppStore } from '../store/useAppStore';
 
 const EvaluationPage = () => {
@@ -11,8 +11,6 @@ const EvaluationPage = () => {
     const classroomId = classroomIdParam || '';
     const matrixId = matrixIdParam || '';
 
-    console.log('EvaluationPage - classroomId:', classroomId);
-    console.log('EvaluationPage - matrixId:', matrixId);
 
     const {
         classrooms,
@@ -53,9 +51,6 @@ const EvaluationPage = () => {
     }, [currentMatrix, loadStudentsByClassroom]);
 
     useEffect(() => {
-        console.log('EvaluationPage - students from store:', students);
-        console.log('EvaluationPage - currentMatrix from store:', currentMatrix);
-        console.log('EvaluationPage - studentEvaluations from store:', studentEvaluations);
 
         // Initialize evaluationsState once students and existing evaluations are loaded
         if (students.length > 0 && currentMatrix && studentEvaluations) {

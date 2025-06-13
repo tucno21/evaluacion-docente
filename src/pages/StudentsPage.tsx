@@ -1,44 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Download, Upload, X, FileSpreadsheet, Search } from 'lucide-react';
 import { generateExcelTemplate, parseExcelStudents } from '../utils/excel';
 import { saveAs } from 'file-saver';
-import { useAppStore } from '../store/useAppStore'; // Import useAppStore
-import { useParams } from 'react-router-dom'; // Import useParams and useNavigate
-import { useEffect } from 'react'; // Import useEffect
-import { getClassroomById } from '../utils/indexDB'; // Import getClassroomById
-import { useHeaderStore } from '../store/useHeaderStore'; // Import useHeaderStore
+import { useAppStore } from '../store/useAppStore';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { getClassroomById, getAllClassrooms } from '../utils/indexDB';
+import { useHeaderStore } from '../store/useHeaderStore';
+import type { Classroom, Student } from '../types/types';
 
 const StudentsPage = () => {
     const { gradeId } = useParams<{ gradeId: string }>();
-
-    const classroomId = gradeId; // Use gradeId directly as classroomId
+    const classroomId = gradeId;
+    const navigate = useNavigate(); // Initialize useNavigate
 
     const { students, loadStudentsByClassroom, addManyStudents, loadClassrooms } = useAppStore();
-
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const { setHeaderTitle } = useHeaderStore(); // Get setHeaderTitle from Zustand store
+    const [copyToClassroomId, setCopyToClassroomId] = useState<string>('');
+    const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
+    const [copyErrors, setCopyErrors] = useState<Record<string, string>>({});
+    const { setHeaderTitle } = useHeaderStore();
 
     useEffect(() => {
-        loadClassrooms(); // Load all classrooms
+        loadClassrooms();
         if (classroomId) {
             loadStudentsByClassroom(classroomId);
-            const fetchClassroom = async () => {
+            const fetchClassroomAndClassrooms = async () => {
                 const fetchedClassroom = await getClassroomById(classroomId);
                 if (fetchedClassroom) {
                     setHeaderTitle(`Estudiantes - ${fetchedClassroom.name} ${fetchedClassroom.grade}° ${fetchedClassroom.section}`);
                 } else {
                     setHeaderTitle('Cargando aula...');
                 }
+                const classrooms = await getAllClassrooms();
+                setAllClassrooms(classrooms.filter(classroom => classroom.id !== classroomId));
             };
-            fetchClassroom();
+            fetchClassroomAndClassrooms();
         }
     }, [classroomId, loadStudentsByClassroom, loadClassrooms, setHeaderTitle]);
 
-    // Filtrar estudiantes por término de búsqueda
     const filteredStudents = students.filter(student =>
         `${student.fullName}`.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -95,7 +99,6 @@ const StudentsPage = () => {
         try {
             const importedStudents = await parseExcelStudents(selectedFile);
 
-            // Assign the classroomId to each imported student
             const studentsToSave = importedStudents.map(s => ({
                 ...s,
                 classroomId: classroomId,
@@ -107,6 +110,8 @@ const StudentsPage = () => {
             setIsProcessing(false);
             closeImportModal();
             alert(`Se importaron ${studentsToSave.length} estudiantes correctamente`);
+            // Redirect to the same classroom's student page to refresh the view
+            navigate(`/classrooms/${classroomId}/students`);
         } catch (error) {
             console.error('Error al importar estudiantes:', error);
             alert('Error al importar estudiantes: ' + error);
@@ -121,61 +126,81 @@ const StudentsPage = () => {
         setIsProcessing(false);
     };
 
+    const validateCopyForm = () => {
+        const newErrors: Record<string, string> = {};
+        if (!copyToClassroomId) {
+            newErrors.classroomId = 'Debe seleccionar un aula de destino';
+        }
+        setCopyErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleCopyStudents = async () => {
+        if (!validateCopyForm()) return;
+
+        setIsProcessing(true);
+
+        try {
+            const studentsToCopy: Student[] = students.map(student => ({
+                ...student,
+                id: crypto.randomUUID(),
+                classroomId: copyToClassroomId,
+            }));
+
+            await addManyStudents(studentsToCopy);
+            setIsProcessing(false);
+            closeCopyModal();
+            navigate(`/grade/${copyToClassroomId}/students`);
+        } catch (error) {
+            console.error('Error al copiar estudiantes:', error);
+            alert('Error al copiar estudiantes: ' + error);
+            setIsProcessing(false);
+        }
+    };
+
+    const closeCopyModal = () => {
+        setIsCopyModalOpen(false);
+        setCopyToClassroomId('');
+        setCopyErrors({});
+        setIsProcessing(false);
+    };
+
+
     return (
-        <div className="min-h-full">
-            {/* Header */}
-            <div className="mb-8">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-3">
-                        {/* Back button is now handled by MainLayout */}
-                        <div className="bg-secondary-100 p-3 rounded-xl">
-                            <Users className="h-8 w-8 text-secondary-600" />
-                        </div>
-                        <div>
-                            {/* Title is now in MainLayout */}
-                            <p className="text-neutral-600">
-                                {students.length} estudiante{students.length !== 1 ? 's' : ''} registrado{students.length !== 1 ? 's' : ''}
-                            </p>
-                        </div>
+        <div className="min-h-full space-y-6 px-2 pb-4 sm:px-6 lg:px-8">
+            {/* Header y Resumen */}
+            <div className="pt-1 pb-2 border-b border-neutral-200 sm:border-none">
+                <div className="flex items-center space-x-4 mb-4">
+                    <div className="bg-secondary-100 p-3 rounded-xl">
+                        <Users className="h-7 w-7 text-secondary-600" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-neutral-900">
+                            Estudiantes
+                        </h2>
+                        <p className="text-sm sm:text-base text-neutral-600">
+                            {students.length} estudiante{students.length !== 1 ? 's' : ''} registrado{students.length !== 1 ? 's' : ''}
+                        </p>
                     </div>
                 </div>
 
-                {/* Botones principales */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <button
-                        onClick={handleDownloadTemplate}
-                        className="flex items-center justify-center space-x-3 bg-info-600 hover:bg-info-700 text-white px-6 py-4 rounded-xl transition-colors duration-200 shadow-sm"
-                    >
-                        <Download className="h-5 w-5" />
-                        <span className="font-medium">Descargar Plantilla Excel</span>
-                    </button>
-
-                    <button
-                        onClick={() => setIsImportModalOpen(true)}
-                        className="flex items-center justify-center space-x-3 bg-accent-600 hover:bg-accent-700 text-white px-6 py-4 rounded-xl transition-colors duration-200 shadow-sm"
-                    >
-                        <Upload className="h-5 w-5" />
-                        <span className="font-medium">Importar desde Excel</span>
-                    </button>
-                </div>
-
                 {/* Barra de búsqueda */}
-                <div className="relative">
+                <div className="relative mb-2">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
                     <input
                         type="text"
-                        placeholder="Buscar estudiante por nombre o documento..."
+                        placeholder="Buscar estudiante por nombre..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
                     />
                 </div>
             </div>
 
             {/* Lista de estudiantes */}
-            <div className="mb-8">
+            <div className="mb-4">
                 {filteredStudents.length === 0 ? (
-                    <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-neutral-300">
+                    <div className="text-center py-12 px-4 bg-white rounded-xl border-2 border-dashed border-neutral-300">
                         <div className="bg-neutral-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                             <Users className="h-8 w-8 text-neutral-400" />
                         </div>
@@ -185,40 +210,44 @@ const StudentsPage = () => {
                         <p className="text-neutral-600 mb-4">
                             {searchTerm
                                 ? 'Intenta con otro término de búsqueda'
-                                : 'Importa estudiantes desde un archivo Excel para comenzar'
+                                : 'Importa estudiantes desde un archivo Excel para comenzar.'
                             }
                         </p>
+                        <button
+                            onClick={handleDownloadTemplate}
+                            className="inline-flex items-center px-4 py-2 bg-info-600 hover:bg-info-700 text-white rounded-lg transition-colors duration-200 text-sm"
+                        >
+                            <Download className="h-4 w-4 mr-2" />
+                            Descargar Plantilla
+                        </button>
                     </div>
                 ) : (
                     <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
-                        <div className="px-6 py-4 bg-neutral-50 border-b border-neutral-200">
+                        <div className="px-4 py-2 bg-neutral-50 border-b border-neutral-200">
                             <h2 className="text-lg font-semibold text-neutral-900">
                                 Lista de Estudiantes
                             </h2>
                         </div>
-
                         <div className="divide-y divide-neutral-200">
                             {filteredStudents.map((student, index) => (
                                 <div
                                     key={student.id}
-                                    className="px-6 py-4 hover:bg-neutral-50 transition-colors duration-150"
+                                    className="px-4 py-2 hover:bg-neutral-50 transition-colors duration-150"
                                 >
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-4">
-                                            <div className="bg-primary-100 rounded-full w-12 h-12 flex items-center justify-center">
+                                        <div className="flex items-center space-x-4 min-w-0 flex-1">
+                                            <div className="bg-primary-100 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
                                                 <span className="text-primary-700 font-semibold text-lg">
-                                                    {student.fullName.charAt(0)}
+                                                    {student.fullName.charAt(0).toUpperCase()}
                                                 </span>
                                             </div>
-
-                                            <div>
-                                                <h3 className="text-lg font-medium text-neutral-900">
+                                            <div className="min-w-0">
+                                                <h3 className="text-base font-medium text-neutral-900 truncate">
                                                     {student.fullName}
                                                 </h3>
                                             </div>
                                         </div>
-
-                                        <div className="text-right">
+                                        <div className="text-right flex-shrink-0 ml-4">
                                             <div className="bg-neutral-100 text-neutral-700 text-xs font-medium px-2 py-1 rounded-full">
                                                 #{String(index + 1).padStart(2, '0')}
                                             </div>
@@ -227,22 +256,51 @@ const StudentsPage = () => {
                                 </div>
                             ))}
                         </div>
+
+                    </div>
+                )}
+
+                {/* Botón para Copiar Estudiantes - Visible solo si hay estudiantes */}
+                {filteredStudents.length > 0 && (
+                    <div className="flex justify-center">
+                        <div className="p-2 border-neutral-200 text-center mt-4">
+                            <button
+                                onClick={() => setIsCopyModalOpen(true)}
+                                className="flex items-center justify-center space-x-2 bg-info-600 hover:bg-info-700 text-white px-5 py-3 rounded-xl transition-colors duration-200 text-base font-medium shadow-sm hover:shadow-md"
+                            >
+                                <span>Copiar Estudiantes a otra Aula</span>
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
 
+            {/* Floating Action Button (FAB) para Importar */}
+            <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="fixed bottom-6 right-6 bg-gradient-to-r from-accent-600 to-accent-700 hover:from-accent-700 hover:to-accent-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-accent-200 active:scale-95 z-40"
+                aria-label="Importar estudiantes"
+            >
+                <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+
             {/* Modal de importación */}
             {isImportModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-                            <h2 className="text-xl font-semibold text-neutral-900">
-                                Importar Estudiantes desde Excel
-                            </h2>
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                            <div>
+                                <h2 className="text-xl font-bold text-neutral-900">
+                                    Importar Estudiantes
+                                </h2>
+                                <p className="text-sm text-neutral-600 mt-1">
+                                    Sube tu archivo Excel para añadir estudiantes.
+                                </p>
+                            </div>
                             <button
                                 onClick={closeImportModal}
-                                className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
                                 disabled={isProcessing}
                             >
                                 <X className="h-5 w-5" />
@@ -250,19 +308,19 @@ const StudentsPage = () => {
                         </div>
 
                         {/* Contenido del modal */}
-                        <div className="p-6">
+                        <div className="p-6 space-y-6">
                             {!selectedFile ? (
-                                <div>
-                                    <div className="mb-6">
-                                        <h3 className="text-lg font-medium text-neutral-900 mb-2">
+                                <>
+                                    <div className="mb-4">
+                                        <h3 className="text-lg font-semibold text-neutral-900 mb-2">
                                             Instrucciones
                                         </h3>
                                         <div className="bg-info-50 border border-info-200 rounded-lg p-4">
-                                            <ul className="text-sm text-info-800 space-y-1">
-                                                <li>• Descarga primero la plantilla Excel</li>
-                                                <li>• Completa los datos de los estudiantes</li>
-                                                <li>• Guarda el archivo en formato .xlsx</li>
-                                                <li>• Arrastra el archivo aquí o selecciónalo</li>
+                                            <ul className="text-sm text-info-800 space-y-1 list-disc list-inside">
+                                                <li>Descarga primero la plantilla Excel.</li>
+                                                <li>Completa los datos de los estudiantes.</li>
+                                                <li>Guarda el archivo en formato .xlsx.</li>
+                                                <li>Arrastra el archivo aquí o selecciónalo.</li>
                                             </ul>
                                         </div>
                                     </div>
@@ -297,13 +355,13 @@ const StudentsPage = () => {
                                         />
                                         <label
                                             htmlFor="file-input"
-                                            className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg cursor-pointer transition-colors"
+                                            className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg cursor-pointer transition-colors font-medium text-sm"
                                         >
                                             <Upload className="h-4 w-4 mr-2" />
                                             Seleccionar archivo
                                         </label>
                                     </div>
-                                </div>
+                                </>
                             ) : (
                                 <div>
                                     <h3 className="text-lg font-medium text-neutral-900 mb-4">
@@ -326,42 +384,132 @@ const StudentsPage = () => {
                                         <div className="bg-info-50 border border-info-200 rounded-lg p-4 mb-6">
                                             <div className="flex items-center space-x-3">
                                                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-info-600 border-t-transparent"></div>
-                                                <span className="text-info-800">Procesando archivo...</span>
+                                                <span className="text-info-800 text-sm">Procesando archivo...</span>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* Botones */}
-                            <div className="flex space-x-3 pt-6 border-t border-neutral-200">
+                            {/* Botones del modal */}
+                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100">
                                 <button
                                     type="button"
                                     onClick={closeImportModal}
-                                    className="flex-1 px-4 py-2 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
+                                    className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
                                     disabled={isProcessing}
                                 >
                                     Cancelar
                                 </button>
-
                                 {selectedFile && (
                                     <button
                                         type="button"
                                         onClick={() => setSelectedFile(null)}
-                                        className="px-4 py-2 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
+                                        className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
                                         disabled={isProcessing}
                                     >
                                         Cambiar archivo
                                     </button>
                                 )}
-
                                 <button
                                     type="button"
                                     onClick={selectedFile ? handleImportStudents : handleDownloadTemplate}
-                                    className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full sm:flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                                     disabled={isProcessing}
                                 >
                                     {selectedFile ? 'Importar Estudiantes' : 'Descargar Plantilla'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal para copiar estudiantes */}
+            {isCopyModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+                        {/* Header del modal */}
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                            <div>
+                                <h2 className="text-xl font-bold text-neutral-900">
+                                    Copiar Estudiantes a Otra Aula
+                                </h2>
+                                <p className="text-sm text-neutral-600 mt-1">
+                                    Selecciona el aula de destino para copiar todos los estudiantes.
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeCopyModal}
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                aria-label="Cerrar modal de copiar"
+                                disabled={isProcessing}
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Formulario de copiar */}
+                        <div className="p-6 space-y-5">
+                            {/* Seleccionar Aula */}
+                            <div>
+                                <label htmlFor="copyToClassroom" className="block text-sm font-semibold text-neutral-700 mb-2">
+                                    Seleccionar Aula de Destino
+                                </label>
+                                <select
+                                    id="copyToClassroom"
+                                    value={copyToClassroomId}
+                                    onChange={(e) => {
+                                        setCopyToClassroomId(e.target.value);
+                                        if (copyErrors.classroomId) {
+                                            setCopyErrors(prev => ({ ...prev, classroomId: '' }));
+                                        }
+                                    }}
+                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${copyErrors.classroomId ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
+                                        }`}
+                                    disabled={isProcessing}
+                                >
+                                    <option value="">-- Selecciona un aula --</option>
+                                    {allClassrooms.map((classroom) => (
+                                        <option key={classroom.id} value={classroom.id}>
+                                            {classroom.name} - {classroom.grade}° {classroom.section}
+                                        </option>
+                                    ))}
+                                </select>
+                                {copyErrors.classroomId && (
+                                    <p className="text-error-600 text-sm mt-2 flex items-center">
+                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
+                                        {copyErrors.classroomId}
+                                    </p>
+                                )}
+                            </div>
+
+                            {isProcessing && (
+                                <div className="bg-info-50 border border-info-200 rounded-lg p-4">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-info-600 border-t-transparent"></div>
+                                        <span className="text-info-800 text-sm">Copiando estudiantes...</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Botones de acción */}
+                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100">
+                                <button
+                                    type="button"
+                                    onClick={closeCopyModal}
+                                    className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
+                                    disabled={isProcessing}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleCopyStudents}
+                                    className="w-full sm:flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                    disabled={isProcessing || !copyToClassroomId}
+                                >
+                                    Copiar Estudiantes
                                 </button>
                             </div>
                         </div>

@@ -3,29 +3,19 @@ import { Users, Download, Upload, X, FileSpreadsheet, Search } from 'lucide-reac
 import { generateExcelTemplate, parseExcelStudents } from '../utils/excel';
 import { saveAs } from 'file-saver';
 import { useAppStore } from '../store/useAppStore'; // Import useAppStore
-
-// Mock de useParams para el ejemplo
-const mockParams = { gradeId: 'classroom-123' }; // Changed to a string ID for consistency
-
-// Mock de useNavigate para el ejemplo
-const mockNavigate = (path: string) => {
-    console.log(`Navegando a: ${path}`);
-    alert(`En tu proyecto real navegará a: ${path}`);
-};
-
+import { useParams, useNavigate } from 'react-router-dom'; // Import useParams and useNavigate
 import { useEffect } from 'react'; // Import useEffect
+import type { Classroom } from '../types/types'; // Import Classroom type
+import { getClassroomById } from '../utils/indexDB'; // Import getClassroomById
 
 const StudentsPage = () => {
-    // En tu proyecto real, usa: const navigate = useNavigate();
-    const navigate = mockNavigate;
-    // En tu proyecto real, usa: const { gradeId } = useParams<{ gradeId: string }>();
-    const { gradeId } = mockParams; // gradeId is already a string, use directly
+    const navigate = useNavigate();
+    const { gradeId } = useParams<{ gradeId: string }>();
 
     const classroomId = gradeId; // Use gradeId directly as classroomId
 
-    const { students, loadStudentsByClassroom, addManyStudents, classrooms, loadClassrooms } = useAppStore();
-
-    const currentClassroom = classrooms.find(c => c.id === classroomId);
+    const { students, loadStudentsByClassroom, addManyStudents, loadClassrooms } = useAppStore();
+    const [currentClassroom, setCurrentClassroom] = useState<Classroom | null>(null); // New state for classroom data
 
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -37,6 +27,11 @@ const StudentsPage = () => {
         loadClassrooms(); // Load all classrooms
         if (classroomId) {
             loadStudentsByClassroom(classroomId);
+            const fetchClassroom = async () => {
+                const fetchedClassroom = await getClassroomById(classroomId);
+                setCurrentClassroom(fetchedClassroom || null);
+            };
+            fetchClassroom();
         }
     }, [classroomId, loadStudentsByClassroom, loadClassrooms]);
 
@@ -87,7 +82,10 @@ const StudentsPage = () => {
     };
 
     const handleImportStudents = async () => {
-        if (!selectedFile) return;
+        if (!selectedFile || !classroomId) {
+            alert('No se puede importar estudiantes sin un ID de aula válido.');
+            return;
+        }
 
         setIsProcessing(true);
 
@@ -97,7 +95,7 @@ const StudentsPage = () => {
             // Assign the classroomId to each imported student
             const studentsToSave = importedStudents.map(s => ({
                 ...s,
-                classroomId: classroomId, // classroomId is already a string
+                classroomId: classroomId,
             }));
 
             console.log('Importing students with classroomId:', classroomId);
@@ -141,7 +139,7 @@ const StudentsPage = () => {
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold text-neutral-900">
-                                Estudiantes - {currentClassroom ? `${currentClassroom.name} ${currentClassroom.grade}-${currentClassroom.section}` : `Aula ${gradeId}`}
+                                {currentClassroom ? `Estudiantes - ${currentClassroom.name} ${currentClassroom.grade}° ${currentClassroom.section}` : 'Cargando aula...'}
                             </h1>
                             <p className="text-neutral-600">
                                 {students.length} estudiante{students.length !== 1 ? 's' : ''} registrado{students.length !== 1 ? 's' : ''}

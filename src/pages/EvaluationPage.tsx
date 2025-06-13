@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ClipboardList, Save } from 'lucide-react';
-import type { StudentEvaluation, AchievementLevel } from '../types/types';
+import { ClipboardList } from 'lucide-react';
+import type { StudentEvaluation, AchievementLevel, CriterionEvaluation } from '../types/types';
 import { useAppStore } from '../store/useAppStore';
 
 const EvaluationPage = () => {
@@ -51,7 +51,6 @@ const EvaluationPage = () => {
     }, [currentMatrix, loadStudentsByClassroom]);
 
     useEffect(() => {
-
         // Initialize evaluationsState once students and existing evaluations are loaded
         if (students.length > 0 && currentMatrix && studentEvaluations) {
             const initialEvaluations: StudentEvaluation[] = students.map(student => {
@@ -66,7 +65,7 @@ const EvaluationPage = () => {
                         matrixId: matrixId,
                         criteriaEvaluations: currentMatrix.criteria.map(criterion => ({
                             criterionId: criterion.id,
-                            level: 'C' // Default level
+                            level: '' as AchievementLevel // No default level selected
                         }))
                     };
                 }
@@ -75,36 +74,50 @@ const EvaluationPage = () => {
         }
     }, [students, currentMatrix, studentEvaluations, matrixId]);
 
-    const handleLevelChange = (studentId: string, criterionId: string, level: AchievementLevel) => {
-        setEvaluationsState(prevEvaluations => {
-            return prevEvaluations.map(se => {
-                if (se.studentId === studentId) {
-                    const updatedCriteria = se.criteriaEvaluations.map(ce => {
-                        if (ce.criterionId === criterionId) {
-                            return { ...ce, level };
-                        }
-                        return ce;
-                    });
-                    return { ...se, criteriaEvaluations: updatedCriteria };
-                }
-                return se;
-            });
+    const handleLevelChange = async (studentId: string, criterionId: string, level: AchievementLevel) => {
+        // Find the student evaluation to update
+        const studentEvaluationToUpdate = evaluationsState.find((se: StudentEvaluation) => se.studentId === studentId);
+
+        if (!studentEvaluationToUpdate) {
+            console.error('Student evaluation not found for studentId:', studentId);
+            return;
+        }
+
+        // Create a new object for the updated criteria
+        const updatedCriteria = studentEvaluationToUpdate.criteriaEvaluations.map((ce: CriterionEvaluation) => {
+            if (ce.criterionId === criterionId) {
+                return { ...ce, level };
+            }
+            return ce;
         });
-    };
 
-    const handleSaveEvaluations = async () => {
-        if (!currentMatrix) return;
+        // Create the updated student evaluation object
+        const updatedEvaluation: StudentEvaluation = {
+            ...studentEvaluationToUpdate,
+            criteriaEvaluations: updatedCriteria
+        };
 
-        for (const evaluation of evaluationsState) {
-            if (!evaluation.id) { // Check if id is empty string or undefined/null
-                // New evaluation
-                await addNewStudentEvaluation(evaluation);
-            } else {
-                // Existing evaluation
-                await updateExistingStudentEvaluation(evaluation);
+        // Update the local state
+        setEvaluationsState(prevEvaluations =>
+            prevEvaluations.map((se: StudentEvaluation) => (se.studentId === studentId ? updatedEvaluation : se))
+        );
+
+        // Now, save the updatedEvaluation to IndexedDB
+        if (!updatedEvaluation.id) {
+            // If it's a new evaluation, add it
+            const newId = await addNewStudentEvaluation(updatedEvaluation) || ''; // Ensure newId is string
+            // Update the local state with the new ID from IndexedDB
+            setEvaluationsState(prevEvaluations =>
+                prevEvaluations.map((se: StudentEvaluation) => (se.studentId === studentId ? { ...updatedEvaluation, id: newId } : se))
+            );
+        } else {
+            // If it's an existing evaluation, update it
+            try {
+                await updateExistingStudentEvaluation(updatedEvaluation);
+            } catch (e: any) {
+                console.error('Error updating existing evaluation:', e.message, updatedEvaluation);
             }
         }
-        alert('Evaluaciones guardadas correctamente!');
     };
 
     const goBack = () => {
@@ -147,13 +160,6 @@ const EvaluationPage = () => {
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={handleSaveEvaluations}
-                        className="flex items-center space-x-2 bg-success-600 hover:bg-success-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm"
-                    >
-                        <Save className="h-5 w-5" />
-                        <span className="font-medium">Guardar Evaluaciones</span>
-                    </button>
                 </div>
             </div>
 
@@ -183,41 +189,46 @@ const EvaluationPage = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-neutral-200">
-                        {students.map((student, studentIndex) => (
-                            <tr key={student.id}>
-                                <td className="sticky left-0 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 z-10">
-                                    {studentIndex + 1}
-                                </td>
-                                <td className="sticky left-12 bg-white px-6 py-4 whitespace-nowrap text-sm text-neutral-900 font-medium z-10">
-                                    {student.fullName}
-                                </td>
-                                {currentMatrix.criteria.map(criterion => {
-                                    const studentEvaluation = evaluationsState.find(se => se.studentId === student.id);
-                                    const criterionEvaluation = studentEvaluation?.criteriaEvaluations.find(ce => ce.criterionId === criterion.id);
-                                    const currentLevel = criterionEvaluation?.level || 'C'; // Default to 'C' if not found
+                        {students.map((student, studentIndex) => {
+                            const studentEvaluation = evaluationsState.find(se => se.studentId === student.id);
+                            if (!studentEvaluation) return null; // Should not happen if initialEvaluations is correct
 
-                                    return (
-                                        <td key={criterion.id} className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 border-l border-neutral-200">
-                                            <div className="flex justify-center space-x-2">
-                                                {['C', 'B', 'A', 'AD'].map(level => (
-                                                    <label key={level} className="inline-flex items-center">
-                                                        <input
-                                                            type="radio"
-                                                            className="form-radio h-4 w-4 text-primary-600"
-                                                            name={`student-${student.id}-criterion-${criterion.id}`}
-                                                            value={level}
-                                                            checked={currentLevel === level}
-                                                            onChange={() => handleLevelChange(student.id, criterion.id, level as AchievementLevel)}
-                                                        />
-                                                        <span className="ml-1 text-neutral-700">{level}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </td>
-                                    );
-                                })}
-                            </tr>
-                        ))}
+                            // Original rendering logic for a row
+                            return (
+                                <tr key={student.id}>
+                                    <td className="sticky left-0 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 z-10">
+                                        {studentIndex + 1}
+                                    </td>
+                                    <td className="sticky left-12 bg-white px-6 py-4 whitespace-nowrap text-sm text-neutral-900 font-medium z-10">
+                                        {student.fullName}
+                                    </td>
+                                    {currentMatrix.criteria.map(criterion => {
+                                        const criterionEvaluation = studentEvaluation?.criteriaEvaluations.find(ce => ce.criterionId === criterion.id);
+                                        const currentLevel = criterionEvaluation?.level || ''; // No default level selected
+
+                                        return (
+                                            <td key={criterion.id} className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 border-l border-neutral-200">
+                                                <div className="flex justify-center space-x-2">
+                                                    {['C', 'B', 'A', 'AD'].map(level => (
+                                                        <label key={level} className="inline-flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                className="form-radio h-4 w-4 text-primary-600"
+                                                                name={`student-${student.id}-criterion-${criterion.id}`}
+                                                                value={level}
+                                                                checked={currentLevel === level}
+                                                                onChange={() => handleLevelChange(student.id, criterion.id, level as AchievementLevel)}
+                                                            />
+                                                            <span className="ml-1 text-neutral-700">{level}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

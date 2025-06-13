@@ -7,13 +7,16 @@ import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
 import { getClassroomById, getAllClassrooms } from '../utils/indexDB';
 import { useHeaderStore } from '../store/useHeaderStore';
 import type { Classroom, Student } from '../types/types';
+import ModalAlert from '../components/ModalAlert';
+import { Trash2, PlusCircle } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 const StudentsPage = () => {
     const { gradeId } = useParams<{ gradeId: string }>();
     const classroomId = gradeId;
     const navigate = useNavigate(); // Initialize useNavigate
 
-    const { students, loadStudentsByClassroom, addManyStudents, loadClassrooms } = useAppStore();
+    const { students, loadStudentsByClassroom, addManyStudents, loadClassrooms, removeStudent, addStudent } = useAppStore();
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +27,15 @@ const StudentsPage = () => {
     const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
     const [copyErrors, setCopyErrors] = useState<Record<string, string>>({});
     const { setHeaderTitle } = useHeaderStore();
+
+    // State for delete modal
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+
+    // State for register student modal
+    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    const [newStudentName, setNewStudentName] = useState('');
+    const [registerErrors, setRegisterErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         loadClassrooms();
@@ -43,9 +55,11 @@ const StudentsPage = () => {
         }
     }, [classroomId, loadStudentsByClassroom, loadClassrooms, setHeaderTitle]);
 
-    const filteredStudents = students.filter(student =>
-        `${student.fullName}`.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const sortedAndFilteredStudents = students
+        .filter(student =>
+            `${student.fullName}`.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => a.fullName.localeCompare(b.fullName));
 
     const handleDownloadTemplate = () => {
         const excelBlob = generateExcelTemplate();
@@ -143,7 +157,7 @@ const StudentsPage = () => {
         try {
             const studentsToCopy: Student[] = students.map(student => ({
                 ...student,
-                id: crypto.randomUUID(),
+                id: uuidv4(),
                 classroomId: copyToClassroomId,
             }));
 
@@ -162,6 +176,70 @@ const StudentsPage = () => {
         setIsCopyModalOpen(false);
         setCopyToClassroomId('');
         setCopyErrors({});
+        setIsProcessing(false);
+    };
+
+    // Delete student functions
+    const handleDeleteStudent = (student: Student) => {
+        setStudentToDelete(student);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDeleteStudent = async () => {
+        if (studentToDelete) {
+            try {
+                await removeStudent(studentToDelete.id);
+                closeDeleteModal();
+                alert(`Estudiante ${studentToDelete.fullName} eliminado correctamente.`);
+            } catch (error) {
+                console.error('Error al eliminar estudiante:', error);
+                alert('Error al eliminar estudiante: ' + error);
+            }
+        }
+    };
+
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false);
+        setStudentToDelete(null);
+    };
+
+    // Register student functions
+    const validateRegisterForm = () => {
+        const newErrors: Record<string, string> = {};
+        if (!newStudentName.trim()) {
+            newErrors.fullName = 'El nombre del estudiante no puede estar vacío.';
+        }
+        setRegisterErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleRegisterStudent = async () => {
+        if (!validateRegisterForm() || !classroomId) {
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const newStudent: Student = {
+                id: uuidv4(),
+                fullName: newStudentName.trim(),
+                classroomId: classroomId,
+            };
+            await addStudent(newStudent);
+            setIsProcessing(false);
+            closeRegisterModal();
+            alert(`Estudiante ${newStudent.fullName} registrado correctamente.`);
+        } catch (error) {
+            console.error('Error al registrar estudiante:', error);
+            alert('Error al registrar estudiante: ' + error);
+            setIsProcessing(false);
+        }
+    };
+
+    const closeRegisterModal = () => {
+        setIsRegisterModalOpen(false);
+        setNewStudentName('');
+        setRegisterErrors({});
         setIsProcessing(false);
     };
 
@@ -199,7 +277,7 @@ const StudentsPage = () => {
 
             {/* Lista de estudiantes */}
             <div className="mb-4">
-                {filteredStudents.length === 0 ? (
+                {sortedAndFilteredStudents.length === 0 ? (
                     <div className="text-center py-12 px-4 bg-white rounded-xl border-2 border-dashed border-neutral-300">
                         <div className="bg-neutral-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                             <Users className="h-8 w-8 text-neutral-400" />
@@ -210,16 +288,25 @@ const StudentsPage = () => {
                         <p className="text-neutral-600 mb-4">
                             {searchTerm
                                 ? 'Intenta con otro término de búsqueda'
-                                : 'Importa estudiantes desde un archivo Excel para comenzar.'
+                                : 'Importa estudiantes desde un archivo Excel o registra uno nuevo para comenzar.'
                             }
                         </p>
-                        <button
-                            onClick={handleDownloadTemplate}
-                            className="inline-flex items-center px-4 py-2 bg-info-600 hover:bg-info-700 text-white rounded-lg transition-colors duration-200 text-sm"
-                        >
-                            <Download className="h-4 w-4 mr-2" />
-                            Descargar Plantilla
-                        </button>
+                        <div className="flex justify-center space-x-4 mt-4">
+                            <button
+                                onClick={handleDownloadTemplate}
+                                className="inline-flex items-center px-4 py-2 bg-info-600 hover:bg-info-700 text-white rounded-lg transition-colors duration-200 text-sm"
+                            >
+                                <Download className="h-4 w-4 mr-2" />
+                                Descargar Plantilla
+                            </button>
+                            <button
+                                onClick={() => setIsRegisterModalOpen(true)}
+                                className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200 text-sm"
+                            >
+                                <PlusCircle className="h-4 w-4 mr-2" />
+                                Registrar Estudiante
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
@@ -229,7 +316,7 @@ const StudentsPage = () => {
                             </h2>
                         </div>
                         <div className="divide-y divide-neutral-200">
-                            {filteredStudents.map((student, index) => (
+                            {sortedAndFilteredStudents.map((student: Student, index: number) => (
                                 <div
                                     key={student.id}
                                     className="px-4 py-2 hover:bg-neutral-50 transition-colors duration-150"
@@ -247,10 +334,17 @@ const StudentsPage = () => {
                                                 </h3>
                                             </div>
                                         </div>
-                                        <div className="text-right flex-shrink-0 ml-4">
+                                        <div className="flex items-center space-x-3 flex-shrink-0 ml-4">
                                             <div className="bg-neutral-100 text-neutral-700 text-xs font-medium px-2 py-1 rounded-full">
                                                 #{String(index + 1).padStart(2, '0')}
                                             </div>
+                                            <button
+                                                onClick={() => handleDeleteStudent(student)}
+                                                className="text-error-500 hover:text-error-700 p-1 rounded-full hover:bg-error-50 transition-colors"
+                                                aria-label={`Eliminar estudiante ${student.fullName}`}
+                                            >
+                                                <Trash2 className="h-5 w-5" />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -261,7 +355,7 @@ const StudentsPage = () => {
                 )}
 
                 {/* Botón para Copiar Estudiantes - Visible solo si hay estudiantes */}
-                {filteredStudents.length > 0 && (
+                {sortedAndFilteredStudents.length > 0 && (
                     <div className="flex justify-center">
                         <div className="p-2 border-neutral-200 text-center mt-4">
                             <button
@@ -510,6 +604,111 @@ const StudentsPage = () => {
                                     disabled={isProcessing || !copyToClassroomId}
                                 >
                                     Copiar Estudiantes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Floating Action Button (FAB) para Registrar Estudiante */}
+            <button
+                onClick={() => setIsRegisterModalOpen(true)}
+                className="fixed bottom-6 left-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95 z-40"
+                aria-label="Registrar nuevo estudiante"
+            >
+                <PlusCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+
+            {/* Modal de confirmación de eliminación */}
+            <ModalAlert
+                isOpen={isDeleteModalOpen}
+                onClose={closeDeleteModal}
+                onConfirm={confirmDeleteStudent}
+                title="Eliminar Estudiante"
+                message={`¿Estás seguro de que quieres eliminar a ${studentToDelete?.fullName || 'este estudiante'}? Esta acción no se puede deshacer.`}
+                confirmText="Sí, Eliminar"
+                cancelText="Cancelar"
+            />
+
+            {/* Modal para registrar nuevo estudiante */}
+            {isRegisterModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+                        {/* Header del modal */}
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                            <div>
+                                <h2 className="text-xl font-bold text-neutral-900">
+                                    Registrar Nuevo Estudiante
+                                </h2>
+                                <p className="text-sm text-neutral-600 mt-1">
+                                    Ingresa el nombre completo del estudiante.
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeRegisterModal}
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                disabled={isProcessing}
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Contenido del modal */}
+                        <div className="p-6 space-y-5">
+                            <div>
+                                <label htmlFor="newStudentName" className="block text-sm font-semibold text-neutral-700 mb-2">
+                                    Nombre Completo
+                                </label>
+                                <input
+                                    type="text"
+                                    id="newStudentName"
+                                    value={newStudentName}
+                                    onChange={(e) => {
+                                        setNewStudentName(e.target.value);
+                                        if (registerErrors.fullName) {
+                                            setRegisterErrors(prev => ({ ...prev, fullName: '' }));
+                                        }
+                                    }}
+                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${registerErrors.fullName ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
+                                        }`}
+                                    placeholder="Ej: Juan Pérez García"
+                                    disabled={isProcessing}
+                                />
+                                {registerErrors.fullName && (
+                                    <p className="text-error-600 text-sm mt-2 flex items-center">
+                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
+                                        {registerErrors.fullName}
+                                    </p>
+                                )}
+                            </div>
+
+                            {isProcessing && (
+                                <div className="bg-info-50 border border-info-200 rounded-lg p-4">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-info-600 border-t-transparent"></div>
+                                        <span className="text-info-800 text-sm">Registrando estudiante...</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Botones de acción */}
+                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100">
+                                <button
+                                    type="button"
+                                    onClick={closeRegisterModal}
+                                    className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
+                                    disabled={isProcessing}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleRegisterStudent}
+                                    className="w-full sm:flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                    disabled={isProcessing || !newStudentName.trim()}
+                                >
+                                    Registrar Estudiante
                                 </button>
                             </div>
                         </div>

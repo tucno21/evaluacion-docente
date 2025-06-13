@@ -41,7 +41,7 @@ interface AppState {
 
     // Student actions
     loadStudentsByClassroom: (classroomId: string) => Promise<void>;
-    addNewStudent: (student: Omit<Student, 'id'>) => Promise<string | undefined>;
+    addStudent: (student: Omit<Student, 'id'>) => Promise<string | undefined>;
     addManyStudents: (students: Omit<Student, 'id'>[]) => Promise<string[] | undefined>;
     updateExistingStudent: (student: Student) => Promise<void>;
     removeStudent: (id: string) => Promise<void>;
@@ -133,7 +133,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
             set({ error: error.message, loading: false });
         }
     },
-    addNewStudent: async (student) => {
+    addStudent: async (student) => {
         set({ loading: true, error: null });
         try {
             const id = await addStudent(student);

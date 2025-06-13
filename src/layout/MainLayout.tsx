@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { GraduationCap, Wifi, WifiOff, ArrowLeft, Home } from 'lucide-react';
+import { GraduationCap, ArrowLeft, Home } from 'lucide-react';
 import { useHeaderStore } from '../store/useHeaderStore'; // Import the Zustand store
 
 const MainLayout = () => {
@@ -8,21 +8,7 @@ const MainLayout = () => {
     const navigate = useNavigate();
     const { headerTitle } = useHeaderStore(); // Get headerTitle from Zustand store
 
-    const [isOnline, setIsOnline] = React.useState(navigator.onLine);
     const [showBackButton, setShowBackButton] = React.useState(false);
-
-    React.useEffect(() => {
-        const handleOnline = () => setIsOnline(true);
-        const handleOffline = () => setIsOnline(false);
-
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, []);
 
     React.useEffect(() => {
         // Show back button for any path not being the home page
@@ -67,21 +53,6 @@ const MainLayout = () => {
                                     <Home className="h-6 w-6 text-neutral-700" />
                                 </button>
                             )}
-
-                            {/* Connection indicator */}
-                            <div className="flex items-center space-x-2">
-                                {isOnline ? (
-                                    <div className="flex items-center space-x-1 text-secondary-600">
-                                        <Wifi size={16} />
-                                        <span className="text-xs font-medium hidden sm:inline">En línea</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center space-x-1 text-warning-600">
-                                        <WifiOff size={16} />
-                                        <span className="text-xs font-medium hidden sm:inline">Sin conexión</span>
-                                    </div>
-                                )}
-                            </div>
                         </div>
                     </div>
                 </div>

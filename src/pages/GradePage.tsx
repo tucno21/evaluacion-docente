@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Calendar, ClipboardList, X, Trash2, BookOpen } from 'lucide-react';
+import { Users, Plus, Calendar, ClipboardList, X, Trash2, BookOpen, Pencil } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import type { EvaluationMatrix, EvaluationCriterion, Classroom } from '../types/types';
@@ -9,8 +9,9 @@ import { getClassroomById } from '../utils/indexDB'; // Import getClassroomById
 const GradePage = () => {
     const { gradeId } = useParams<{ gradeId: string }>();
     const navigate = useNavigate();
-    const { evaluationMatrices, loadMatricesByClassroom, addNewEvaluationMatrix } = useAppStore();
+    const { evaluationMatrices, loadMatricesByClassroom, addNewEvaluationMatrix, updateExistingMatrix, removeMatrix } = useAppStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingMatrixId, setEditingMatrixId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         date: ''
@@ -71,23 +72,35 @@ const GradePage = () => {
 
         const validCriteria: EvaluationCriterion[] = criteria.filter(c => c.name.trim() !== '');
 
-        const newMatrix: Omit<EvaluationMatrix, 'id'> = {
-            classroomId: gradeId!, // Use non-null assertion here
-            name: formData.name.trim(),
-            date: formData.date,
-            criteria: validCriteria.map((c: EvaluationCriterion) => ({ id: c.id!, name: c.name.trim() })), // Use non-null assertion
-        };
-
-        const id = await addNewEvaluationMatrix(newMatrix);
-        if (id) {
-            closeModal();
+        if (editingMatrixId) {
+            // Update existing matrix
+            const updatedMatrix: EvaluationMatrix = {
+                id: editingMatrixId,
+                classroomId: gradeId!,
+                name: formData.name.trim(),
+                date: formData.date,
+                criteria: validCriteria.map((c: EvaluationCriterion) => ({ id: c.id!, name: c.name.trim() })),
+            };
+            await updateExistingMatrix(updatedMatrix);
+        } else {
+            // Add new matrix
+            const newMatrix: Omit<EvaluationMatrix, 'id'> = {
+                classroomId: gradeId!,
+                name: formData.name.trim(),
+                date: formData.date,
+                criteria: validCriteria.map((c: EvaluationCriterion) => ({ id: c.id!, name: c.name.trim() })),
+            };
+            await addNewEvaluationMatrix(newMatrix);
         }
+        closeModal();
+        loadMatricesByClassroom(gradeId!); // Reload matrices after add/update
     };
 
     const closeModal = () => {
         setIsModalOpen(false);
+        setEditingMatrixId(null); // Reset editing state
         setFormData({ name: '', date: '' });
-        setCriteria([{ id: uuidv4(), name: '' }]); // Use uuid for initial criterion ID
+        setCriteria([{ id: uuidv4(), name: '' }]);
         setErrors({});
     };
 
@@ -121,6 +134,26 @@ const GradePage = () => {
 
     const goToStudents = () => {
         navigate(`/grade/${gradeId}/students`);
+    };
+
+    const handleDeleteMatrix = async (matrixId: string) => {
+        if (window.confirm('¿Estás seguro de que quieres eliminar esta matriz de evaluación?')) {
+            await removeMatrix(matrixId);
+            loadMatricesByClassroom(gradeId!); // Reload matrices after deletion
+        }
+    };
+
+    const handleEditMatrix = (matrixId: string) => {
+        const matrixToEdit = evaluationMatrices.find(matrix => matrix.id === matrixId);
+        if (matrixToEdit) {
+            setEditingMatrixId(matrixId);
+            setFormData({
+                name: matrixToEdit.name,
+                date: matrixToEdit.date
+            });
+            setCriteria(matrixToEdit.criteria.map(c => ({ ...c }))); // Deep copy criteria
+            setIsModalOpen(true);
+        }
     };
 
     const goToEvaluation = (matrixId: string) => {
@@ -209,10 +242,19 @@ const GradePage = () => {
                                     <div className="bg-accent-100 p-3 rounded-lg">
                                         <ClipboardList className="h-6 w-6 text-accent-600" />
                                     </div>
-                                    <div className="text-right">
-                                        <span className="bg-primary-100 text-primary-700 text-xs font-medium px-2 py-1 rounded-full">
-                                            {matrix.criteria.length} criterio{matrix.criteria.length !== 1 ? 's' : ''}
-                                        </span>
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleEditMatrix(matrix.id); }}
+                                            className="p-2 text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors"
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteMatrix(matrix.id); }}
+                                            className="p-2 text-error-600 hover:bg-error-50 rounded-lg transition-colors"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
                                     </div>
                                 </div>
 
@@ -223,20 +265,6 @@ const GradePage = () => {
                                 <div className="flex items-center text-sm text-neutral-600 mb-3">
                                     <Calendar className="h-4 w-4 mr-2" />
                                     <span>{new Date(matrix.date).toLocaleDateString()}</span>
-                                </div>
-
-                                <div className="space-y-1 mb-4">
-                                    <p className="text-xs font-medium text-neutral-700">Criterios:</p>
-                                    {matrix.criteria.slice(0, 2).map((criterion, _index) => (
-                                        <p key={criterion.id} className="text-xs text-neutral-600 truncate">
-                                            • {criterion.name}
-                                        </p>
-                                    ))}
-                                    {matrix.criteria.length > 2 && (
-                                        <p className="text-xs text-neutral-500">
-                                            +{matrix.criteria.length - 2} más...
-                                        </p>
-                                    )}
                                 </div>
 
                             </div>
@@ -252,7 +280,7 @@ const GradePage = () => {
                         {/* Header del modal */}
                         <div className="flex items-center justify-between p-6 border-b border-neutral-200 sticky top-0 bg-white">
                             <h2 className="text-xl font-semibold text-neutral-900">
-                                Nueva Matriz de Evaluación
+                                {editingMatrixId ? 'Editar Matriz de Evaluación' : 'Nueva Matriz de Evaluación'}
                             </h2>
                             <button
                                 onClick={closeModal}
@@ -367,7 +395,7 @@ const GradePage = () => {
                                     onClick={handleSubmit}
                                     className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
                                 >
-                                    Crear Matriz
+                                    {editingMatrixId ? 'Guardar Cambios' : 'Crear Matriz'}
                                 </button>
                             </div>
                         </div>

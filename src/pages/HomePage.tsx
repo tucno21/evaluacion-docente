@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, BookOpen, Users, Calendar, X, School, Trash2 } from 'lucide-react';
+import { Plus, BookOpen, Calendar, X, School, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import type { Classroom } from '../types/types';
-import ModalAlert from '../components/ModalAlert'; // Importar el nuevo componente
+import ModalAlert from '../components/ModalAlert';
 
 const HomePage = () => {
     const navigate = useNavigate();
     const { classrooms, loadClassrooms, addNewClassroom, deleteClassroom } = useAppStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false); // Estado para el modal de eliminación
-    const [classroomToDeleteId, setClassroomToDeleteId] = useState<string | null>(null); // ID del aula a eliminar
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [classroomToDeleteId, setClassroomToDeleteId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         grade: '',
@@ -40,7 +40,6 @@ const HomePage = () => {
             newErrors.section = 'La sección debe ser una letra (A-Z)';
         }
 
-        // Verificar si ya existe un aula con el mismo grado y sección
         const exists = classrooms.some(
             classroom =>
                 classroom.grade === formData.grade.trim() &&
@@ -78,7 +77,6 @@ const HomePage = () => {
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
-        // Limpiar error del campo cuando el usuario empieza a escribir
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: '' }));
         }
@@ -95,7 +93,7 @@ const HomePage = () => {
     };
 
     const handleDeleteClassroom = (e: React.MouseEvent, classroomId: string) => {
-        e.stopPropagation(); // Evitar que se dispare goToGrade
+        e.stopPropagation();
         setClassroomToDeleteId(classroomId);
         setShowDeleteModal(true);
     };
@@ -118,158 +116,194 @@ const HomePage = () => {
     }, [loadClassrooms]);
 
     return (
-        <div className="min-h-full">
-            {/* Header de bienvenida */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-neutral-900 mb-2">
-                    Bienvenido a EvaluApp
-                </h1>
-                <p className="text-neutral-600">
-                    Gestiona tus aulas y evaluaciones de manera eficiente
+        <div className="min-h-full space-y-6">
+            {/* Header compacto */}
+            <div className="text-center sm:text-left">
+                <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-1">
+                    Mis Aulas
+                </h2>
+                <p className="text-sm sm:text-base text-neutral-600">
+                    Gestiona tus aulas y evaluaciones
                 </p>
             </div>
 
+
             {/* Lista de aulas */}
             {classrooms.length === 0 ? (
-                <div className="text-center py-16">
-                    <div className="bg-neutral-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                        <School className="h-10 w-10 text-neutral-400" />
+                <div className="text-center py-12 sm:py-16">
+                    <div className="bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 shadow-inner">
+                        <School className="h-8 w-8 sm:h-10 sm:w-10 text-neutral-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-neutral-900 mb-2">
-                        No tienes aulas creadas
+                    <h3 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">
+                        Sin aulas creadas
                     </h3>
-                    <p className="text-neutral-600 mb-6 max-w-md mx-auto">
-                        Comienza creando tu primera aula para gestionar estudiantes y evaluaciones
+                    <p className="text-sm sm:text-base text-neutral-600 mb-6 max-w-sm mx-auto px-4">
+                        Crea tu primera aula para comenzar a gestionar estudiantes
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-3">
                     {classrooms.map((classroom) => (
                         <div
                             key={classroom.id}
-                            className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                            className="bg-white rounded-xl border border-neutral-200 hover:border-primary-300 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.99]"
                             onClick={() => goToGrade(classroom.id)}
                         >
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-primary-100 p-3 rounded-lg">
-                                        <BookOpen className="h-6 w-6 text-primary-600" />
+                            <div className="p-4">
+                                <div className="flex items-center justify-between">
+                                    {/* Contenido principal */}
+                                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                        {/* Icono y badge */}
+                                        <div className="relative">
+                                            <div className="bg-gradient-to-br from-primary-100 to-primary-200 p-2.5 rounded-lg">
+                                                <BookOpen className="h-5 w-5 text-primary-600" />
+                                            </div>
+                                            <div className="absolute -top-1 -right-1 bg-accent-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                                                {classroom.grade}{classroom.section}
+                                            </div>
+                                        </div>
+
+                                        {/* Información */}
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-neutral-900 truncate text-base sm:text-lg">
+                                                {classroom.name} <span>{classroom.grade}{classroom.section}</span>
+                                            </h3>
+                                            <div className="flex items-center space-x-4 mt-1">
+                                                <div className="flex items-center text-xs text-neutral-500">
+                                                    <Calendar className="h-3 w-3 mr-1" />
+                                                    <span className="hidden sm:inline">
+                                                        {new Date(classroom.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                    <span className="sm:hidden">
+                                                        {new Date(classroom.createdAt).toLocaleDateString('es', {
+                                                            day: '2-digit',
+                                                            month: 'short'
+                                                        })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button
-                                        onClick={(e) => handleDeleteClassroom(e, classroom.id)}
-                                        className="text-neutral-400 hover:text-error-600 transition-colors p-2 rounded-full hover:bg-neutral-100"
-                                        aria-label="Eliminar aula"
-                                    >
-                                        <Trash2 className="h-5 w-5" />
-                                    </button>
+
+                                    {/* Acciones */}
+                                    <div className="flex items-center space-x-1">
+                                        <button
+                                            onClick={(e) => handleDeleteClassroom(e, classroom.id)}
+                                            className="p-2 text-neutral-400 hover:text-error-600 hover:bg-error-50 rounded-lg transition-all duration-200"
+                                            aria-label="Eliminar aula"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className="bg-accent-100 text-accent-700 text-xs font-medium px-2 py-1 rounded-full">
-                                        {classroom.grade}° {classroom.section}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-                                {classroom.name}
-                            </h3>
-
-                            <div className="flex items-center text-sm text-neutral-600 mb-4">
-                                <Users className="h-4 w-4 mr-2" />
-                                <span>Grado {classroom.grade} - Sección {classroom.section}</span>
-                            </div>
-
-                            <div className="flex items-center text-xs text-neutral-500">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                <span>Creado el {new Date(classroom.createdAt).toLocaleDateString()}</span>
                             </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* Botón flotante para crear aula */}
+            {/* Botón flotante optimizado para móvil */}
             <button
                 onClick={() => setIsModalOpen(true)}
-                className="fixed bottom-6 right-6 bg-primary-600 hover:bg-primary-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-200"
+                className="fixed bottom-6 right-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95"
+                aria-label="Crear nueva aula"
             >
-                <Plus className="h-6 w-6" />
+                <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
 
-            {/* Modal para crear aula */}
+            {/* Modal mejorado */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-                            <h2 className="text-xl font-semibold text-neutral-900">
-                                Crear Nueva Aula
-                            </h2>
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                            <div>
+                                <h2 className="text-xl font-bold text-neutral-900">
+                                    Nueva Aula
+                                </h2>
+                                <p className="text-sm text-neutral-600 mt-1">
+                                    Completa la información básica
+                                </p>
+                            </div>
                             <button
                                 onClick={closeModal}
-                                className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
                             >
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
 
                         {/* Formulario */}
-                        <div className="p-6 space-y-4">
+                        <div className="p-6 space-y-5">
                             {/* Nombre del aula */}
                             <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Nombre del Aula *
+                                <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                    Nombre del Aula
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => handleInputChange('name', e.target.value)}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.name ? 'border-error-500' : 'border-neutral-300'
+                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${errors.name ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
                                         }`}
-                                    placeholder="Ej: Aula de Matemáticas"
+                                    placeholder="Ej: Matemáticas 1°A"
                                 />
                                 {errors.name && (
-                                    <p className="text-error-600 text-sm mt-1">{errors.name}</p>
+                                    <p className="text-error-600 text-sm mt-2 flex items-center">
+                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
+                                        {errors.name}
+                                    </p>
                                 )}
                             </div>
 
-                            {/* Grado */}
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Grado *
-                                </label>
-                                <input
-                                    type="number"
-                                    value={formData.grade}
-                                    onChange={(e) => handleInputChange('grade', e.target.value)}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.grade ? 'border-error-500' : 'border-neutral-300'
-                                        }`}
-                                    placeholder="Ej: 1"
-                                    min="1"
-                                    max="6"
-                                />
-                                {errors.grade && (
-                                    <p className="text-error-600 text-sm mt-1">{errors.grade}</p>
-                                )}
-                            </div>
+                            {/* Grado y Sección en fila */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                        Grado
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={formData.grade}
+                                        onChange={(e) => handleInputChange('grade', e.target.value)}
+                                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${errors.grade ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
+                                            }`}
+                                        placeholder="Ej: 1"
+                                        min="1"
+                                        max="6"
+                                    />
+                                    {errors.grade && (
+                                        <p className="text-error-600 text-sm mt-2 flex items-center">
+                                            <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
+                                            {errors.grade}
+                                        </p>
+                                    )}
+                                </div>
 
-                            {/* Sección */}
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Sección *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.section}
-                                    onChange={(e) => handleInputChange('section', e.target.value.toUpperCase())}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.section ? 'border-error-500' : 'border-neutral-300'
-                                        }`}
-                                    placeholder="A"
-                                    maxLength={1}
-                                />
-                                {errors.section && (
-                                    <p className="text-error-600 text-sm mt-1">{errors.section}</p>
-                                )}
+                                <div>
+                                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                        Sección
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.section}
+                                        onChange={(e) => handleInputChange('section', e.target.value)}
+                                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${errors.section ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
+                                            }`}
+                                        placeholder="Ej: A"
+                                        maxLength={1}
+                                        onInput={(e: React.FormEvent<HTMLInputElement>) => {
+                                            e.currentTarget.value = e.currentTarget.value.toUpperCase();
+                                            handleInputChange('section', e.currentTarget.value);
+                                        }}
+                                    />
+                                    {errors.section && (
+                                        <p className="text-error-600 text-sm mt-2 flex items-center">
+                                            <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
+                                            {errors.section}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Botones */}
@@ -277,14 +311,14 @@ const HomePage = () => {
                                 <button
                                     type="button"
                                     onClick={closeModal}
-                                    className="flex-1 px-4 py-2 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
+                                    className="flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg"
                                 >
                                     Crear Aula
                                 </button>
@@ -294,7 +328,7 @@ const HomePage = () => {
                 </div>
             )}
 
-            {/* Modal de Alerta para Eliminación */}
+            {/* Modal de Alerta */}
             <ModalAlert
                 isOpen={showDeleteModal}
                 onClose={closeDeleteModal}

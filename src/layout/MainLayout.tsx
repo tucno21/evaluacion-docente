@@ -1,78 +1,109 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { GraduationCap, ArrowLeft, Home } from 'lucide-react';
-import { useHeaderStore } from '../store/useHeaderStore'; // Import the Zustand store
+import { BookOpen, ArrowLeft, Home } from 'lucide-react';
+import { useHeaderStore } from '../store/useHeaderStore';
 
 const MainLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { headerTitle } = useHeaderStore(); // Get headerTitle from Zustand store
+    const { headerTitle } = useHeaderStore();
 
     const [showBackButton, setShowBackButton] = React.useState(false);
 
     React.useEffect(() => {
-        // Show back button for any path not being the home page
         setShowBackButton(location.pathname !== '/');
     }, [location.pathname]);
 
     const handleBack = () => {
-        navigate(-1); // Go back one step in history
+        navigate(-1);
     };
 
     const handleHome = () => {
-        navigate('/'); // Go to the home page
+        navigate('/');
     };
 
     return (
         <div className="min-h-screen bg-neutral-50 flex flex-col">
-            {/* Header */}
-            <header className="bg-white shadow-sm border-b border-neutral-200 sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        {/* Back button, Logo/Title, and Home button */}
+            {/* Header Profesional */}
+            <header className="bg-gradient-to-r from-primary-800 to-primary-700 shadow-lg sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                    <div className="flex items-center justify-between h-16 sm:h-18">
+                        {/* Sección izquierda - Logo y navegación */}
                         <div className="flex items-center space-x-3">
                             {showBackButton && (
-                                <button onClick={handleBack} className="p-2 rounded-full hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                    <ArrowLeft className="h-6 w-6 text-neutral-700" />
+                                <button
+                                    onClick={handleBack}
+                                    className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/30"
+                                    aria-label="Volver"
+                                >
+                                    <ArrowLeft className="h-5 w-5 text-white" />
                                 </button>
                             )}
-                            <div className="bg-primary-600 p-2 rounded-xl shadow-sm">
-                                <GraduationCap className="h-6 w-6 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-bold text-neutral-900">{headerTitle}</h1>
-                                <p className="text-xs text-neutral-600 hidden sm:block">Sistema de Evaluación Docente</p>
+
+                            {/* Logo y título */}
+                            <div className="flex items-center space-x-3">
+                                <div className="bg-white/15 p-2.5 rounded-xl backdrop-blur-sm border border-white/10">
+                                    <BookOpen className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <h1 className="text-lg sm:text-xl font-bold text-white leading-tight">
+                                        {headerTitle}
+                                    </h1>
+                                    <p className="text-xs text-white/80 hidden sm:block font-medium">
+                                        Sistema de Evaluación Docente
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Connection status and Home button */}
-                        <div className="flex items-center space-x-4">
-                            {/* Home button */}
+                        {/* Sección derecha - Acciones */}
+                        <div className="flex items-center space-x-2">
+                            {/* Botón Home */}
                             {location.pathname !== '/' && (
-                                <button onClick={handleHome} className="p-2 rounded-full hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                    <Home className="h-6 w-6 text-neutral-700" />
+                                <button
+                                    onClick={handleHome}
+                                    className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/30"
+                                    aria-label="Inicio"
+                                >
+                                    <Home className="h-5 w-5 text-white" />
                                 </button>
                             )}
                         </div>
                     </div>
                 </div>
+
+                {/* Barra de progreso sutil */}
+                <div className="h-0.5 bg-gradient-to-r from-white/20 via-white/40 to-white/20"></div>
             </header>
 
             {/* Contenido principal */}
-            <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2">
-                <Outlet />
+            <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 sm:py-6">
+                <div className="p-4 sm:p-6">
+                    <Outlet />
+                </div>
             </main>
 
-            {/* Footer */}
+            {/* Footer profesional */}
             <footer className="bg-white border-t border-neutral-200 mt-auto">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
-                    <div className="flex justify-between items-center space-y-3 sm:space-y-0">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+                    <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
                         {/* Información de la app */}
-                        <div className="flex items-center space-x-3">
-                            <p className="text-sm text-neutral-600">©2025 Evaluación Docente</p>
+                        <div className="flex items-center space-x-4">
+                            <p className="text-sm text-neutral-600 font-medium">
+                                © 2025 Evaluación Docente
+                            </p>
+                            <div className="h-4 w-px bg-neutral-300"></div>
+                            <span className="text-xs text-neutral-500 bg-neutral-100 px-2 py-1 rounded-full">
+                                v1.0
+                            </span>
                         </div>
-                        <div className="">
-                            <span className='text-neutral-500 text-xs'>IndexedDB</span>
+
+                        {/* Estado de almacenamiento */}
+                        <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div>
+                            <span className="text-xs text-neutral-500 font-medium">
+                                IndexedDB Conectado
+                            </span>
                         </div>
                     </div>
                 </div>

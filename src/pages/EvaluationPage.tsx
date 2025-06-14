@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { ClipboardList } from 'lucide-react';
 import type { StudentEvaluation, AchievementLevel, CriterionEvaluation } from '../types/types';
 import { useAppStore } from '../store/useAppStore';
-import { useHeaderStore } from '../store/useHeaderStore'; // Import useHeaderStore
+import { useHeaderStore } from '../store/useHeaderStore';
+
 
 const EvaluationPage = () => {
     const { classroomId: classroomIdParam, matrixId: matrixIdParam } = useParams<{ classroomId: string; matrixId: string }>();
@@ -30,7 +31,7 @@ const EvaluationPage = () => {
     const currentMatrix = evaluationMatrices.find(m => m.id === matrixId);
 
     const [evaluationsState, setEvaluationsState] = useState<StudentEvaluation[]>([]);
-    const { setHeaderTitle } = useHeaderStore(); // Get setHeaderTitle from Zustand store
+    const { setHeaderTitle } = useHeaderStore();
 
     useEffect(() => {
         loadClassrooms();
@@ -49,6 +50,10 @@ const EvaluationPage = () => {
     }, [currentMatrix, loadStudentsByClassroom]);
 
     useEffect(() => {
+        if (evaluationsState.length > 0 && students.length > 0) {
+            return;
+        }
+
         if (students.length > 0 && currentMatrix && studentEvaluations) {
             const initialEvaluations: StudentEvaluation[] = students.map(student => {
                 const existingEvaluation = studentEvaluations.find(se => se.studentId === student.id);
@@ -68,50 +73,58 @@ const EvaluationPage = () => {
             });
             setEvaluationsState(initialEvaluations);
         }
+
         if (currentMatrix) {
             setHeaderTitle(currentMatrix.name);
         } else {
             setHeaderTitle('Cargando evaluación...');
         }
-    }, [students, currentMatrix, studentEvaluations, matrixId, setHeaderTitle]);
+    }, [students, currentMatrix, studentEvaluations, matrixId, setHeaderTitle, evaluationsState.length]); // Se añade evaluationsState.length para que el guard sea efectivo
 
     const handleLevelChange = async (studentId: string, criterionId: string, level: AchievementLevel) => {
         const studentEvaluationToUpdate = evaluationsState.find((se: StudentEvaluation) => se.studentId === studentId);
 
         if (!studentEvaluationToUpdate) {
-            console.error('Student evaluation not found for studentId:', studentId);
             return;
         }
 
-        const updatedCriteria = studentEvaluationToUpdate.criteriaEvaluations.map((ce: CriterionEvaluation) => {
-            if (ce.criterionId === criterionId) {
-                return { ...ce, level };
-            }
-            return ce;
-        });
+        const updatedCriteria = studentEvaluationToUpdate.criteriaEvaluations.map((ce: CriterionEvaluation) =>
+            ce.criterionId === criterionId ? { ...ce, level } : ce
+        );
 
         const updatedEvaluation: StudentEvaluation = {
             ...studentEvaluationToUpdate,
             criteriaEvaluations: updatedCriteria
         };
 
+        // 1. Actualización optimista: renderiza el cambio en la UI inmediatamente.
         setEvaluationsState(prevEvaluations =>
             prevEvaluations.map((se: StudentEvaluation) => (se.studentId === studentId ? updatedEvaluation : se))
         );
 
+        // 2. Sincronización con el backend/store global en segundo plano.
         if (!updatedEvaluation.id) {
-            const newId = await addNewStudentEvaluation(updatedEvaluation) || '';
-            setEvaluationsState(prevEvaluations =>
-                prevEvaluations.map((se: StudentEvaluation) => (se.studentId === studentId ? { ...updatedEvaluation, id: newId } : se))
-            );
+            const newId = await addNewStudentEvaluation(updatedEvaluation);
+            if (newId) {
+                // Actualiza el ID en el estado local para que la siguiente vez se use 'update' en lugar de 'add'
+                setEvaluationsState(prevEvaluations =>
+                    prevEvaluations.map((se) =>
+                        se.studentId === studentId ? { ...updatedEvaluation, id: newId } : se
+                    )
+                );
+            }
         } else {
             try {
                 await updateExistingStudentEvaluation(updatedEvaluation);
             } catch (e: any) {
                 console.error('Error updating existing evaluation:', e.message, updatedEvaluation);
+                // Opcional: Revertir el estado si la actualización falla
             }
         }
     };
+
+    // ... el resto del código JSX permanece sin cambios ...
+    // ... (if (loading), if (error), return (...))
 
     if (loading) {
         return <div className="text-center py-12">Cargando...</div>;
@@ -148,17 +161,13 @@ const EvaluationPage = () => {
             <div className="bg-white border border-neutral-400 cursor-pointer shadow-sm hover:shadow-md overflow-x-auto">
                 <div className="min-w-full">
                     {/* Header */}
-                    {/* Header */}
                     <div className="bg-neutral-50 border-b border-neutral-400 flex">
-                        {/* Columna N° fija */}
                         <div className="w-8 border-r border-neutral-400 p-2 text-center font-bold text-xs text-neutral-700 bg-neutral-100 sticky left-0 z-20 flex-shrink-0">
                             N°
                         </div>
-                        {/* Columna Nombres fija */}
                         <div className="w-40 border-r border-neutral-400 p-2 text-left font-bold text-xs text-neutral-700 bg-neutral-100 sticky left-8 z-20 flex-shrink-0">
                             NOMBRES Y APELLIDOS
                         </div>
-                        {/* Columnas de criterios - ocupan el espacio restante */}
                         <div className="flex flex-1 min-w-0">
                             {currentMatrix.criteria.map(criterion => (
                                 <div key={criterion.id} className="flex-1 min-w-20 border-r border-black pt-2 text-center bg-neutral-100 flex flex-col justify-between">
@@ -189,7 +198,7 @@ const EvaluationPage = () => {
                                 <div className="w-40 border-r border-neutral-400 p-2 text-left font-medium text-xs bg-white sticky left-8 z-10 flex-shrink-0">
                                     <div className="truncate leading-tight text-neutral-800">{student.fullName}</div>
                                 </div>
-                                {/* Celdas de evaluación - ocupan el espacio restante */}
+                                {/* Celdas de evaluación */}
                                 <div className="flex flex-1 min-w-0">
                                     {currentMatrix.criteria.map(criterion => {
                                         const criterionEvaluation = studentEvaluation?.criteriaEvaluations.find(ce => ce.criterionId === criterion.id);
@@ -208,7 +217,6 @@ const EvaluationPage = () => {
                                                                     h-full border-r border-neutral-400 last:border-r-0
                                                                     flex items-center justify-center text-xs font-bold
                                                                     touch-manipulation active:scale-95 transition-all duration-150
-                                                                   
                                                                     ${isSelected ? 'bg-primary-600 text-white' : 'text-neutral-300 hover:bg-neutral-100'}
                                                                 `}
                                                                 onClick={() => handleLevelChange(student.id, criterion.id, level as AchievementLevel)}

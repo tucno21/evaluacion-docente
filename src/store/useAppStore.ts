@@ -312,7 +312,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
 
     // ===== Participation Evaluation actions =====
     loadParticipationEvaluationsByMatrix: async (matrixId) => {
-        set({ loading: true, error: null });
+        set({ loading: true, error: null, participationEvaluations: [] }); // Clear previous data
         try {
             const data = await getParticipationEvaluationsByMatrixId(matrixId);
             set({ participationEvaluations: data, loading: false });

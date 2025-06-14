@@ -30,7 +30,6 @@ const EvaluationPage = () => {
         loading,
         error
     } = useAppStore();
-
     const currentClassroom = classrooms.find(c => c.id === classroomId);
     const currentMatrix = evaluationMatrices.find(m => m.id === matrixId);
 
@@ -56,53 +55,58 @@ const EvaluationPage = () => {
     }, [currentMatrix, loadStudentsByClassroom]);
 
     useEffect(() => {
-        if (evaluationsState.length > 0 && participationEvaluationsState.length > 0 && students.length > 0) {
+        if (!currentMatrix || students.length === 0) {
+            setHeaderTitle('Cargando evaluación...');
             return;
         }
 
-        if (students.length > 0 && currentMatrix) {
-            // Initialize StudentEvaluations
-            const initialEvaluations: StudentEvaluation[] = students.map(student => {
-                const existingEvaluation = studentEvaluations.find(se => se.studentId === student.id);
-                if (existingEvaluation) {
-                    return existingEvaluation;
-                } else {
-                    return {
-                        id: '',
-                        studentId: student.id,
-                        matrixId: matrixId,
-                        criteriaEvaluations: currentMatrix.criteria.map(criterion => ({
-                            criterionId: criterion.id,
-                            level: '' as AchievementLevel
-                        }))
-                    };
-                }
-            });
-            setEvaluationsState(initialEvaluations);
+        setHeaderTitle(currentMatrix.name);
 
-            // Initialize ParticipationEvaluations
-            const initialParticipationEvaluations: ParticipationEvaluation[] = students.map(student => {
-                const existingParticipation = participationEvaluations.find(pe => pe.studentId === student.id);
-                if (existingParticipation) {
-                    return existingParticipation;
-                } else {
-                    return {
-                        id: '',
-                        studentId: student.id,
-                        matrixId: matrixId,
-                        level: '' as ParticipationLevel // Default empty level
-                    };
-                }
-            });
-            setParticipationEvaluationsState(initialParticipationEvaluations);
-        }
+        // Initialize StudentEvaluations
+        const initialEvaluations: StudentEvaluation[] = students.map(student => {
+            const existingEvaluation = studentEvaluations.find(se => se.studentId === student.id);
 
-        if (currentMatrix) {
-            setHeaderTitle(currentMatrix.name);
-        } else {
-            setHeaderTitle('Cargando evaluación...');
-        }
-    }, [students, currentMatrix, studentEvaluations, participationEvaluations, matrixId, setHeaderTitle, evaluationsState.length, participationEvaluationsState.length]); // Added participationEvaluations and participationEvaluationsState.length
+            const mergedCriteriaEvaluations = currentMatrix.criteria.map(criterion => {
+                const existingCriterionEval = existingEvaluation?.criteriaEvaluations.find(ce => ce.criterionId === criterion.id);
+                return existingCriterionEval || {
+                    criterionId: criterion.id,
+                    level: '' as AchievementLevel
+                };
+            });
+
+            if (existingEvaluation) {
+                return {
+                    ...existingEvaluation,
+                    criteriaEvaluations: mergedCriteriaEvaluations
+                };
+            } else {
+                return {
+                    id: '',
+                    studentId: student.id,
+                    matrixId: matrixId,
+                    criteriaEvaluations: mergedCriteriaEvaluations
+                };
+            }
+        });
+        setEvaluationsState(initialEvaluations);
+
+        // Initialize ParticipationEvaluations
+        const initialParticipationEvaluations: ParticipationEvaluation[] = students.map(student => {
+            const existingParticipation = participationEvaluations.find(pe => pe.studentId === student.id);
+            if (existingParticipation) {
+                return existingParticipation;
+            } else {
+                return {
+                    id: '',
+                    studentId: student.id,
+                    matrixId: matrixId,
+                    level: '' as ParticipationLevel // Default empty level
+                };
+            }
+        });
+        setParticipationEvaluationsState(initialParticipationEvaluations);
+
+    }, [students, currentMatrix, studentEvaluations, participationEvaluations, matrixId, setHeaderTitle]);
 
     const handleLevelChange = async (studentId: string, criterionId: string, level: AchievementLevel) => {
         const studentEvaluationToUpdate = evaluationsState.find((se: StudentEvaluation) => se.studentId === studentId);

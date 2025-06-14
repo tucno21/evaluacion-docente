@@ -25,6 +25,7 @@ import {
     getStudentEvaluationByMatrixAndStudent
 } from '../utils/indexDB';
 
+// ... la interfaz AppState permanece igual ...
 interface AppState {
     classrooms: Classroom[];
     students: Student[];
@@ -59,6 +60,7 @@ interface AppState {
     getStudentEvaluation: (matrixId: string, studentId: string) => Promise<StudentEvaluation | undefined>;
 }
 
+
 export const useAppStore = create<AppState>((set, _get) => ({
     classrooms: [],
     students: [],
@@ -67,7 +69,8 @@ export const useAppStore = create<AppState>((set, _get) => ({
     loading: false,
     error: null,
 
-    // Classroom actions
+    // ===== Classroom actions =====
+    // Mantenemos 'loading' para cargas masivas
     loadClassrooms: async () => {
         set({ loading: true, error: null });
         try {
@@ -77,53 +80,49 @@ export const useAppStore = create<AppState>((set, _get) => ({
             set({ error: error.message, loading: false });
         }
     },
+    // Quitamos 'loading' para operaciones rápidas
     addNewClassroom: async (classroom) => {
-        set({ loading: true, error: null });
         try {
             const id = await addClassroom(classroom);
             if (id) {
                 const newClassroom = { ...classroom, id };
                 set((state) => ({
                     classrooms: [...state.classrooms, newClassroom],
-                    loading: false,
+                    error: null,
                 }));
                 return id;
             }
-            set({ loading: false });
-            return undefined;
         } catch (error: any) {
-            set({ error: error.message, loading: false });
-            return undefined;
+            set({ error: error.message });
         }
+        return undefined;
     },
     updateExistingClassroom: async (classroom) => {
-        set({ loading: true, error: null });
         try {
             await updateClassroom(classroom);
             set((state) => ({
                 classrooms: state.classrooms.map((c) =>
                     c.id === classroom.id ? classroom : c
                 ),
-                loading: false,
+                error: null,
             }));
         } catch (error: any) {
-            set({ error: error.message, loading: false });
+            set({ error: error.message });
         }
     },
     deleteClassroom: async (id) => {
-        set({ loading: true, error: null });
         try {
             await deleteClassroom(id);
             set((state) => ({
                 classrooms: state.classrooms.filter((c) => c.id !== id),
-                loading: false,
+                error: null,
             }));
         } catch (error: any) {
-            set({ error: error.message, loading: false });
+            set({ error: error.message });
         }
     },
 
-    // Student actions
+    // ===== Student actions =====
     loadStudentsByClassroom: async (classroomId) => {
         set({ loading: true, error: null });
         try {
@@ -134,24 +133,22 @@ export const useAppStore = create<AppState>((set, _get) => ({
         }
     },
     addStudent: async (student) => {
-        set({ loading: true, error: null });
         try {
             const id = await addStudent(student);
             if (id) {
                 const newStudent = { ...student, id };
                 set((state) => ({
                     students: [...state.students, newStudent],
-                    loading: false,
+                    error: null,
                 }));
                 return id;
             }
-            set({ loading: false });
-            return undefined;
         } catch (error: any) {
-            set({ error: error.message, loading: false });
-            return undefined;
+            set({ error: error.message });
         }
+        return undefined;
     },
+    // Mantenemos 'loading' para cargas múltiples
     addManyStudents: async (students) => {
         set({ loading: true, error: null });
         try {
@@ -165,40 +162,37 @@ export const useAppStore = create<AppState>((set, _get) => ({
                 return ids;
             }
             set({ loading: false });
-            return undefined;
         } catch (error: any) {
             set({ error: error.message, loading: false });
-            return undefined;
         }
+        return undefined;
     },
     updateExistingStudent: async (student) => {
-        set({ loading: true, error: null });
         try {
             await updateStudent(student);
             set((state) => ({
                 students: state.students.map((s) =>
                     s.id === student.id ? student : s
                 ),
-                loading: false,
+                error: null,
             }));
         } catch (error: any) {
-            set({ error: error.message, loading: false });
+            set({ error: error.message });
         }
     },
     removeStudent: async (id) => {
-        set({ loading: true, error: null });
         try {
             await deleteStudent(id);
             set((state) => ({
                 students: state.students.filter((s) => s.id !== id),
-                loading: false,
+                error: null,
             }));
         } catch (error: any) {
-            set({ error: error.message, loading: false });
+            set({ error: error.message });
         }
     },
 
-    // Evaluation Matrix actions
+    // ===== Evaluation Matrix actions =====
     loadMatricesByClassroom: async (classroomId) => {
         set({ loading: true, error: null });
         try {
@@ -209,52 +203,47 @@ export const useAppStore = create<AppState>((set, _get) => ({
         }
     },
     addNewEvaluationMatrix: async (matrix) => {
-        set({ loading: true, error: null });
         try {
             const id = await addEvaluationMatrix(matrix);
             if (id) {
                 const newMatrix = { ...matrix, id };
                 set((state) => ({
                     evaluationMatrices: [...state.evaluationMatrices, newMatrix],
-                    loading: false,
+                    error: null,
                 }));
                 return id;
             }
-            set({ loading: false });
-            return undefined;
         } catch (error: any) {
-            set({ error: error.message, loading: false });
-            return undefined;
+            set({ error: error.message });
         }
+        return undefined;
     },
     updateExistingMatrix: async (matrix) => {
-        set({ loading: true, error: null });
         try {
             await updateMatrix(matrix);
             set((state) => ({
                 evaluationMatrices: state.evaluationMatrices.map((m) =>
                     m.id === matrix.id ? matrix : m
                 ),
-                loading: false,
+                error: null,
             }));
         } catch (error: any) {
-            set({ error: error.message, loading: false });
+            set({ error: error.message });
         }
     },
     removeMatrix: async (id) => {
-        set({ loading: true, error: null });
         try {
             await deleteMatrix(id);
             set((state) => ({
                 evaluationMatrices: state.evaluationMatrices.filter((m) => m.id !== id),
-                loading: false,
+                error: null,
             }));
         } catch (error: any) {
-            set({ error: error.message, loading: false });
+            set({ error: error.message });
         }
     },
 
-    // Student Evaluation actions
+    // ===== Student Evaluation actions =====
     loadEvaluationsByMatrix: async (matrixId) => {
         set({ loading: true, error: null });
         try {
@@ -264,48 +253,47 @@ export const useAppStore = create<AppState>((set, _get) => ({
             set({ error: error.message, loading: false });
         }
     },
+    // --- ACCIÓN CLAVE MODIFICADA ---
     addNewStudentEvaluation: async (evaluation) => {
-        set({ loading: true, error: null });
+        // set({ loading: true, error: null }); // <-- ELIMINADO
         try {
             const id = await addStudentEvaluation(evaluation);
             if (id) {
                 const newEvaluation = { ...evaluation, id };
                 set((state) => ({
                     studentEvaluations: [...state.studentEvaluations, newEvaluation],
-                    loading: false,
+                    error: null, // Limpiamos errores previos en caso de éxito
                 }));
                 return id;
             }
-            set({ loading: false });
-            return undefined;
         } catch (error: any) {
-            set({ error: error.message, loading: false });
-            return undefined;
+            set({ error: error.message }); // Solo actualizamos en caso de error
         }
+        return undefined;
     },
+    // --- ACCIÓN CLAVE MODIFICADA ---
     updateExistingStudentEvaluation: async (evaluation) => {
-        set({ loading: true, error: null });
+        // set({ loading: true, error: null }); // <-- ELIMINADO
         try {
             await updateStudentEvaluation(evaluation);
             set((state) => ({
                 studentEvaluations: state.studentEvaluations.map((e) =>
                     e.id === evaluation.id ? evaluation : e
                 ),
-                loading: false,
+                error: null, // Limpiamos errores previos en caso de éxito
             }));
         } catch (error: any) {
-            set({ error: error.message, loading: false });
+            set({ error: error.message }); // Solo actualizamos en caso de error
         }
     },
     getStudentEvaluation: async (matrixId, studentId) => {
-        set({ loading: true, error: null });
         try {
             const evaluation = await getStudentEvaluationByMatrixAndStudent(matrixId, studentId);
-            set({ loading: false });
+            // No es necesario cambiar el estado global aquí
             return evaluation;
         } catch (error: any) {
-            set({ error: error.message, loading: false });
-            return undefined;
+            set({ error: error.message });
         }
+        return undefined;
     },
 }));

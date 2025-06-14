@@ -18,11 +18,8 @@ const GradePage = () => {
         addNewEvaluationMatrix,
         updateExistingMatrix,
         removeMatrix,
-        students, // Added for Excel download
         loadStudentsByClassroom, // Added for Excel download
-        studentEvaluations, // Added for Excel download
         loadEvaluationsByMatrix, // Added for Excel download
-        participationEvaluations, // Added for Excel download
         loadParticipationEvaluationsByMatrix // Added for Excel download
     } = useAppStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -268,20 +265,17 @@ const GradePage = () => {
         setIsDownloadingExcel(true);
         try {
             // Ensure all necessary data is loaded for the specific matrix
-            await loadStudentsByClassroom(matrix.classroomId);
-            await loadEvaluationsByMatrix(matrix.id);
-            await loadParticipationEvaluationsByMatrix(matrix.id);
+            // Await the load functions and capture their returned data
+            const fetchedStudents = await loadStudentsByClassroom(matrix.classroomId);
+            const fetchedStudentEvaluations = await loadEvaluationsByMatrix(matrix.id);
+            const fetchedParticipationEvaluations = await loadParticipationEvaluationsByMatrix(matrix.id);
 
-            // Filter the global state to get only relevant data for this matrix
-            const relevantStudents = students.filter(s => s.classroomId === matrix.classroomId);
-            const relevantStudentEvaluations = studentEvaluations.filter(se => se.matrixId === matrix.id);
-            const relevantParticipationEvaluations = participationEvaluations.filter(pe => pe.matrixId === matrix.id);
-
+            // Use the directly fetched data for Excel generation
             const excelBlob = generateEvaluationExcel(
                 matrix,
-                relevantStudents,
-                relevantStudentEvaluations,
-                relevantParticipationEvaluations
+                fetchedStudents, // Use fetched data
+                fetchedStudentEvaluations, // Use fetched data
+                fetchedParticipationEvaluations // Use fetched data
             );
 
             const url = window.URL.createObjectURL(excelBlob);

@@ -47,7 +47,7 @@ interface AppState {
     deleteClassroom: (id: string) => Promise<void>;
 
     // Student actions
-    loadStudentsByClassroom: (classroomId: string) => Promise<void>;
+    loadStudentsByClassroom: (classroomId: string) => Promise<Student[]>;
     addStudent: (student: Omit<Student, 'id'>) => Promise<string | undefined>;
     addManyStudents: (students: Omit<Student, 'id'>[]) => Promise<string[] | undefined>;
     updateExistingStudent: (student: Student) => Promise<void>;
@@ -60,13 +60,13 @@ interface AppState {
     removeMatrix: (id: string) => Promise<void>;
 
     // Student Evaluation actions
-    loadEvaluationsByMatrix: (matrixId: string) => Promise<void>;
+    loadEvaluationsByMatrix: (matrixId: string) => Promise<StudentEvaluation[]>;
     addNewStudentEvaluation: (evaluation: Omit<StudentEvaluation, 'id'>) => Promise<string | undefined>;
     updateExistingStudentEvaluation: (evaluation: StudentEvaluation) => Promise<void>;
     getStudentEvaluation: (matrixId: string, studentId: string) => Promise<StudentEvaluation | undefined>;
 
     // Participation Evaluation actions (New)
-    loadParticipationEvaluationsByMatrix: (matrixId: string) => Promise<void>;
+    loadParticipationEvaluationsByMatrix: (matrixId: string) => Promise<ParticipationEvaluation[]>;
     addNewParticipationEvaluation: (evaluation: Omit<ParticipationEvaluation, 'id'>) => Promise<string | undefined>;
     updateExistingParticipationEvaluation: (evaluation: ParticipationEvaluation) => Promise<void>;
     getParticipationEvaluation: (matrixId: string, studentId: string) => Promise<ParticipationEvaluation | undefined>;
@@ -141,8 +141,10 @@ export const useAppStore = create<AppState>((set, _get) => ({
         try {
             const data = await getStudentsByClassroomId(classroomId);
             set({ students: data, loading: false });
+            return data; // Return the fetched data
         } catch (error: any) {
             set({ error: error.message, loading: false });
+            return []; // Return empty array on error
         }
     },
     addStudent: async (student) => {
@@ -262,8 +264,10 @@ export const useAppStore = create<AppState>((set, _get) => ({
         try {
             const data = await getEvaluationsByMatrixId(matrixId);
             set({ studentEvaluations: data, loading: false });
+            return data; // Return the fetched data
         } catch (error: any) {
             set({ error: error.message, loading: false });
+            return []; // Return empty array on error
         }
     },
     // --- ACCIÓN CLAVE MODIFICADA ---
@@ -316,8 +320,10 @@ export const useAppStore = create<AppState>((set, _get) => ({
         try {
             const data = await getParticipationEvaluationsByMatrixId(matrixId);
             set({ participationEvaluations: data, loading: false });
+            return data; // Return the fetched data
         } catch (error: any) {
             set({ error: error.message, loading: false });
+            return []; // Return empty array on error
         }
     },
     addNewParticipationEvaluation: async (evaluation) => {

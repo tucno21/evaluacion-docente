@@ -1,14 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Classroom, Student, EvaluationMatrix, StudentEvaluation } from "../types/types";
+import type { Classroom, Student, EvaluationMatrix, StudentEvaluation, ParticipationEvaluation } from "../types/types";
 
 // IndexedDB configuration
 const DB_NAME = 'teacher-evaluation-app';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORES = {
     classrooms: 'classrooms',
     students: 'students',
     evaluationMatrices: 'evaluationMatrices',
-    studentEvaluations: 'studentEvaluations'
+    studentEvaluations: 'studentEvaluations',
+    participationEvaluations: 'participationEvaluations' // New store
 };
 
 // Initialize the database
@@ -48,6 +49,13 @@ export const initDB = (): Promise<IDBDatabase> => {
                 const evaluationsStore = db.createObjectStore(STORES.studentEvaluations, { keyPath: 'id' });
                 evaluationsStore.createIndex('matrixId', 'matrixId', { unique: false });
                 evaluationsStore.createIndex('studentId', 'studentId', { unique: false });
+            }
+
+            // New store for participation evaluations
+            if (!db.objectStoreNames.contains(STORES.participationEvaluations)) {
+                const participationStore = db.createObjectStore(STORES.participationEvaluations, { keyPath: 'id' });
+                participationStore.createIndex('matrixId', 'matrixId', { unique: false });
+                participationStore.createIndex('studentId', 'studentId', { unique: false });
             }
         };
     });
@@ -310,5 +318,26 @@ export const getStudentEvaluationByMatrixAndStudent = async (
     studentId: string
 ): Promise<StudentEvaluation | undefined> => {
     const evaluations = await getEvaluationsByMatrixId(matrixId);
+    return evaluations.find(evaluation => evaluation.studentId === studentId);
+};
+
+// Participation-specific functions
+export const addParticipationEvaluation = (evaluation: Omit<ParticipationEvaluation, 'id'>): Promise<string> => {
+    return addItem<ParticipationEvaluation>(STORES.participationEvaluations, evaluation as ParticipationEvaluation);
+};
+
+export const getParticipationEvaluationsByMatrixId = (matrixId: string): Promise<ParticipationEvaluation[]> => {
+    return getItemsByIndex<ParticipationEvaluation>(STORES.participationEvaluations, 'matrixId', matrixId);
+};
+
+export const updateParticipationEvaluation = (evaluation: ParticipationEvaluation): Promise<void> => {
+    return updateItem<ParticipationEvaluation>(STORES.participationEvaluations, evaluation);
+};
+
+export const getParticipationEvaluationByMatrixAndStudent = async (
+    matrixId: string,
+    studentId: string
+): Promise<ParticipationEvaluation | undefined> => {
+    const evaluations = await getParticipationEvaluationsByMatrixId(matrixId);
     return evaluations.find(evaluation => evaluation.studentId === studentId);
 };

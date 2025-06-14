@@ -20,6 +20,7 @@ export interface EvaluationCriterion {
 }
 
 export type AchievementLevel = 'C' | 'B' | 'A' | 'AD';
+export type ParticipationLevel = 'C' | 'B' | 'B+' | 'A' | 'F';
 
 export interface EvaluationMatrix {
     id: string;
@@ -39,6 +40,13 @@ export interface StudentEvaluation {
     studentId: string;
     matrixId: string;
     criteriaEvaluations: CriterionEvaluation[];
+}
+
+export interface ParticipationEvaluation {
+    id: string;
+    studentId: string;
+    matrixId: string;
+    level: ParticipationLevel;
 }
 
 // Type for form submissions

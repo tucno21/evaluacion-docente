@@ -3,7 +3,8 @@ import type {
     Classroom,
     Student,
     EvaluationMatrix,
-    StudentEvaluation
+    StudentEvaluation,
+    ParticipationEvaluation, // New import
 } from '../types/types';
 import {
     addClassroom,
@@ -22,15 +23,20 @@ import {
     addStudentEvaluation,
     getEvaluationsByMatrixId,
     updateStudentEvaluation,
-    getStudentEvaluationByMatrixAndStudent
+    getStudentEvaluationByMatrixAndStudent,
+    // New imports for participation
+    addParticipationEvaluation,
+    getParticipationEvaluationsByMatrixId,
+    updateParticipationEvaluation,
+    getParticipationEvaluationByMatrixAndStudent
 } from '../utils/indexDB';
 
-// ... la interfaz AppState permanece igual ...
 interface AppState {
     classrooms: Classroom[];
     students: Student[];
     evaluationMatrices: EvaluationMatrix[];
     studentEvaluations: StudentEvaluation[];
+    participationEvaluations: ParticipationEvaluation[]; // New state
     loading: boolean;
     error: string | null;
 
@@ -58,6 +64,12 @@ interface AppState {
     addNewStudentEvaluation: (evaluation: Omit<StudentEvaluation, 'id'>) => Promise<string | undefined>;
     updateExistingStudentEvaluation: (evaluation: StudentEvaluation) => Promise<void>;
     getStudentEvaluation: (matrixId: string, studentId: string) => Promise<StudentEvaluation | undefined>;
+
+    // Participation Evaluation actions (New)
+    loadParticipationEvaluationsByMatrix: (matrixId: string) => Promise<void>;
+    addNewParticipationEvaluation: (evaluation: Omit<ParticipationEvaluation, 'id'>) => Promise<string | undefined>;
+    updateExistingParticipationEvaluation: (evaluation: ParticipationEvaluation) => Promise<void>;
+    getParticipationEvaluation: (matrixId: string, studentId: string) => Promise<ParticipationEvaluation | undefined>;
 }
 
 
@@ -66,6 +78,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
     students: [],
     evaluationMatrices: [],
     studentEvaluations: [],
+    participationEvaluations: [], // Initialize new state
     loading: false,
     error: null,
 
@@ -290,6 +303,55 @@ export const useAppStore = create<AppState>((set, _get) => ({
         try {
             const evaluation = await getStudentEvaluationByMatrixAndStudent(matrixId, studentId);
             // No es necesario cambiar el estado global aquí
+            return evaluation;
+        } catch (error: any) {
+            set({ error: error.message });
+        }
+        return undefined;
+    },
+
+    // ===== Participation Evaluation actions =====
+    loadParticipationEvaluationsByMatrix: async (matrixId) => {
+        set({ loading: true, error: null });
+        try {
+            const data = await getParticipationEvaluationsByMatrixId(matrixId);
+            set({ participationEvaluations: data, loading: false });
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
+        }
+    },
+    addNewParticipationEvaluation: async (evaluation) => {
+        try {
+            const id = await addParticipationEvaluation(evaluation);
+            if (id) {
+                const newEvaluation = { ...evaluation, id };
+                set((state) => ({
+                    participationEvaluations: [...state.participationEvaluations, newEvaluation],
+                    error: null,
+                }));
+                return id;
+            }
+        } catch (error: any) {
+            set({ error: error.message });
+        }
+        return undefined;
+    },
+    updateExistingParticipationEvaluation: async (evaluation) => {
+        try {
+            await updateParticipationEvaluation(evaluation);
+            set((state) => ({
+                participationEvaluations: state.participationEvaluations.map((e) =>
+                    e.id === evaluation.id ? evaluation : e
+                ),
+                error: null,
+            }));
+        } catch (error: any) {
+            set({ error: error.message });
+        }
+    },
+    getParticipationEvaluation: async (matrixId, studentId) => {
+        try {
+            const evaluation = await getParticipationEvaluationByMatrixAndStudent(matrixId, studentId);
             return evaluation;
         } catch (error: any) {
             set({ error: error.message });

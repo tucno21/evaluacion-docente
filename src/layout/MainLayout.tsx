@@ -6,13 +6,16 @@ import { useHeaderStore } from '../store/useHeaderStore';
 const MainLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { headerTitle } = useHeaderStore();
+    const { headerTitle, setHeaderTitle } = useHeaderStore();
 
     const [showBackButton, setShowBackButton] = React.useState(false);
 
     React.useEffect(() => {
         setShowBackButton(location.pathname !== '/');
-    }, [location.pathname]);
+        if (location.pathname === '/') {
+            setHeaderTitle('Evaluación Docente'); // Reset to default title
+        }
+    }, [location.pathname, setHeaderTitle]);
 
     const handleBack = () => {
         navigate(-1);
@@ -42,9 +45,11 @@ const MainLayout = () => {
 
                             {/* Logo y título */}
                             <div className="flex items-center space-x-3">
-                                <div className="bg-white/15 p-2.5 rounded-xl backdrop-blur-sm border border-white/10">
-                                    <BookOpen className="h-6 w-6 text-white" />
-                                </div>
+                                {location.pathname === '/' && (
+                                    <div className="bg-white/15 p-2.5 rounded-xl backdrop-blur-sm border border-white/10">
+                                        <BookOpen className="h-6 w-6 text-white" />
+                                    </div>
+                                )}
                                 <div className="flex flex-col">
                                     <h1 className="text-lg sm:text-xl font-bold text-white leading-tight">
                                         {headerTitle}

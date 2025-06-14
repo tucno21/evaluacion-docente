@@ -7,7 +7,7 @@ import type { EvaluationMatrix, EvaluationCriterion, Classroom } from '../types/
 import { v4 as uuidv4 } from 'uuid';
 import { getClassroomById, getAllClassrooms } from '../utils/indexDB'; // Added getAllClassrooms
 import ModalAlert from '../components/ModalAlert'; // Import ModalAlert
-import { generateEvaluationExcel } from '../utils/excel'; // Import the new excel function
+import { generateEvaluationExcel, generateParticipationExcel, generateCriteriaExcel } from '../utils/excel'; // Import the new excel functions
 
 const GradePage = () => {
     const { gradeId } = useParams<{ gradeId: string }>();
@@ -18,21 +18,24 @@ const GradePage = () => {
         addNewEvaluationMatrix,
         updateExistingMatrix,
         removeMatrix,
-        loadStudentsByClassroom, // Added for Excel download
-        loadEvaluationsByMatrix, // Added for Excel download
-        loadParticipationEvaluationsByMatrix // Added for Excel download
+        loadStudentsByClassroom,
+        loadEvaluationsByMatrix,
+        loadParticipationEvaluationsByMatrix,
+        getAllEvaluationMatrices, // Added to fetch all matrices for date range export
+        getAllStudentEvaluations, // Added to fetch all student evaluations for date range export
+        getAllParticipationEvaluations // Added to fetch all participation evaluations for date range export
     } = useAppStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isCopyModalOpen, setIsCopyModalOpen] = useState(false); // New state for copy modal
-    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false); // New state for delete alert modal
-    const [matrixToDeleteId, setMatrixToDeleteId] = useState<string | null>(null); // State to hold matrix ID to delete
+    const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [matrixToDeleteId, setMatrixToDeleteId] = useState<string | null>(null);
     const [editingMatrixId, setEditingMatrixId] = useState<string | null>(null);
-    const [matrixToCopy, setMatrixToCopy] = useState<EvaluationMatrix | null>(null); // State to hold matrix being copied
+    const [matrixToCopy, setMatrixToCopy] = useState<EvaluationMatrix | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         date: ''
     });
-    const [copyFormData, setCopyFormData] = useState({ // New state for copy modal form
+    const [copyFormData, setCopyFormData] = useState({
         classroomId: '',
         date: ''
     });
@@ -40,9 +43,16 @@ const GradePage = () => {
         { id: uuidv4(), name: '' }
     ]);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [copyErrors, setCopyErrors] = useState<Record<string, string>>({}); // New state for copy modal errors
-    const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]); // State for all classrooms
-    const [isDownloadingExcel, setIsDownloadingExcel] = useState(false); // New state for download loading
+    const [copyErrors, setCopyErrors] = useState<Record<string, string>>({});
+    const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
+    const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
+
+    // New states for Excel export modal
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [exportType, setExportType] = useState<'criterios' | 'participacion' | ''>('');
+    const [exportStartDate, setExportStartDate] = useState<string>('');
+    const [exportEndDate, setExportEndDate] = useState<string>('');
+    const [exportErrors, setExportErrors] = useState<Record<string, string>>({});
 
     // Agrupar matrices por mes y ordenar
     const groupedMatrices = evaluationMatrices
@@ -125,6 +135,25 @@ const GradePage = () => {
         return Object.keys(newErrors).length === 0;
     };
 
+    // Validations for Excel export modal
+    const validateExportForm = () => {
+        const newErrors: Record<string, string> = {};
+        if (!exportType) {
+            newErrors.exportType = 'Debe seleccionar un tipo de exportación';
+        }
+        if (!exportStartDate) {
+            newErrors.exportStartDate = 'La fecha de inicio es obligatoria';
+        }
+        if (!exportEndDate) {
+            newErrors.exportEndDate = 'La fecha de fin es obligatoria';
+        }
+        if (exportStartDate && exportEndDate && new Date(exportStartDate) > new Date(exportEndDate)) {
+            newErrors.exportEndDate = 'La fecha de fin no puede ser anterior a la fecha de inicio';
+        }
+        setExportErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
 
     const handleSubmit = async () => {
         if (!validateForm()) return;
@@ -184,10 +213,31 @@ const GradePage = () => {
         setCopyErrors({});
     };
 
+    const closeExportModal = () => {
+        setIsExportModalOpen(false);
+        setExportType('');
+        setExportStartDate('');
+        setExportEndDate('');
+        setExportErrors({});
+    };
+
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: '' }));
+        }
+    };
+
+    const handleExportInputChange = (field: string, value: string) => {
+        if (field === 'exportType') {
+            setExportType(value as 'criterios' | 'participacion' | '');
+        } else if (field === 'exportStartDate') {
+            setExportStartDate(value);
+        } else if (field === 'exportEndDate') {
+            setExportEndDate(value);
+        }
+        if (exportErrors[field]) {
+            setExportErrors(prev => ({ ...prev, [field]: '' }));
         }
     };
 
@@ -261,21 +311,18 @@ const GradePage = () => {
         setIsCopyModalOpen(true);
     };
 
-    const handleDownloadExcel = async (matrix: EvaluationMatrix) => {
+    const handleSingleMatrixDownloadExcel = async (matrix: EvaluationMatrix) => {
         setIsDownloadingExcel(true);
         try {
-            // Ensure all necessary data is loaded for the specific matrix
-            // Await the load functions and capture their returned data
             const fetchedStudents = await loadStudentsByClassroom(matrix.classroomId);
             const fetchedStudentEvaluations = await loadEvaluationsByMatrix(matrix.id);
             const fetchedParticipationEvaluations = await loadParticipationEvaluationsByMatrix(matrix.id);
 
-            // Use the directly fetched data for Excel generation
             const excelBlob = generateEvaluationExcel(
                 matrix,
-                fetchedStudents, // Use fetched data
-                fetchedStudentEvaluations, // Use fetched data
-                fetchedParticipationEvaluations // Use fetched data
+                fetchedStudents,
+                fetchedStudentEvaluations,
+                fetchedParticipationEvaluations
             );
 
             const url = window.URL.createObjectURL(excelBlob);
@@ -287,6 +334,59 @@ const GradePage = () => {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
 
+        } catch (error) {
+            console.error('Error generating or downloading Excel:', error);
+            alert('Hubo un error al generar el archivo Excel.');
+        } finally {
+            setIsDownloadingExcel(false);
+        }
+    };
+
+    const handleExportExcel = async () => {
+        if (!validateExportForm()) return;
+
+        setIsDownloadingExcel(true);
+        try {
+            const allStudents = await loadStudentsByClassroom(gradeId!); // Get students for current classroom
+            const allMatrices = await getAllEvaluationMatrices(); // Get all matrices
+            const allStudentEvals = await getAllStudentEvaluations(); // Get all student evaluations
+            const allParticipationEvals = await getAllParticipationEvaluations(); // Get all participation evaluations
+
+            let excelBlob: Blob | null = null;
+            const start = exportStartDate ? new Date(exportStartDate) : null;
+            const end = exportEndDate ? new Date(exportEndDate) : null;
+
+            if (exportType === 'criterios') {
+                excelBlob = await generateCriteriaExcel(
+                    allMatrices.filter(m => m.classroomId === gradeId), // Filter matrices for current classroom
+                    allStudents,
+                    allStudentEvals.filter(se => allMatrices.some(m => m.id === se.matrixId && m.classroomId === gradeId)), // Filter student evals for current classroom's matrices
+                    allParticipationEvals.filter(pe => allMatrices.some(m => m.id === pe.matrixId && m.classroomId === gradeId)), // Filter participation evals for current classroom's matrices
+                    start,
+                    end
+                );
+            } else if (exportType === 'participacion') {
+                excelBlob = generateParticipationExcel(
+                    allStudents,
+                    allParticipationEvals.filter(pe => allMatrices.some(m => m.id === pe.matrixId && m.classroomId === gradeId)), // Filter participation evals for current classroom's matrices
+                    allMatrices.filter(m => m.classroomId === gradeId), // Filter matrices for current classroom
+                    start,
+                    end
+                );
+            }
+
+            if (excelBlob) {
+                const url = window.URL.createObjectURL(excelBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Reporte_Evaluacion_${exportType}_${new Date().toLocaleDateString('es')}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }
+
+            closeExportModal();
         } catch (error) {
             console.error('Error generating or downloading Excel:', error);
             alert('Hubo un error al generar el archivo Excel.');
@@ -321,16 +421,31 @@ const GradePage = () => {
 
     return (
         <div className="min-h-full space-y-6">
-            {/* Botón Estudiantes - Secundario */}
-            <div className="flex justify-center">
-                <button
-                    onClick={goToStudents}
-                    className="flex items-center space-x-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-4 py-2 rounded-lg transition-colors duration-200 text-sm"
-                >
-                    <Users className="h-4 w-4" />
-                    <span>Ver Estudiantes</span>
-                </button>
+            <div className="flex gap-4 justify-center">
+                {/* Botón Estudiantes - Secundario */}
+                <div className="flex justify-center">
+                    <button
+                        onClick={goToStudents}
+                        className="flex items-center space-x-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-4 py-2 rounded-lg transition-colors duration-200 text-sm"
+                    >
+                        <Users className="h-4 w-4" />
+                        <span>Ver Estudiantes</span>
+                    </button>
+                </div>
+
+                {/* Botón para exportar a Excel (nuevo) */}
+                <div className="flex justify-center">
+                    <button
+                        onClick={() => setIsExportModalOpen(true)}
+                        className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm shadow-md"
+                        aria-label="Exportar a Excel"
+                    >
+                        <FileDown className="h-4 w-4" />
+                        <span>Exportar a Excel</span>
+                    </button>
+                </div>
             </div>
+
 
             {/* Lista de matrices agrupadas por mes */}
             {Object.keys(groupedMatrices).length === 0 ? (
@@ -410,7 +525,7 @@ const GradePage = () => {
                                                     {/* Acciones */}
                                                     <div className="flex items-center space-x-1">
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDownloadExcel(matrix); }}
+                                                            onClick={(e) => { e.stopPropagation(); handleSingleMatrixDownloadExcel(matrix); }}
                                                             className="p-2 text-neutral-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
                                                             aria-label="Descargar Excel"
                                                             disabled={isDownloadingExcel}
@@ -712,6 +827,120 @@ const GradePage = () => {
                 confirmText="Sí, Eliminar"
                 cancelText="Cancelar"
             />
+
+            {/* Modal para exportar a Excel por rango de fechas */}
+            {isExportModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+                        {/* Header del modal */}
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                            <div>
+                                <h2 className="text-xl font-bold text-neutral-900">
+                                    Exportar Reporte a Excel
+                                </h2>
+                                <p className="text-sm text-neutral-600 mt-1">
+                                    Selecciona el tipo de reporte y el rango de fechas.
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeExportModal}
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                aria-label="Cerrar modal de exportación"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Formulario de exportación */}
+                        <div className="p-6 space-y-5">
+                            {/* Tipo de Exportación */}
+                            <div>
+                                <label htmlFor="exportType" className="block text-sm font-semibold text-neutral-700 mb-2">
+                                    Tipo de Reporte
+                                </label>
+                                <select
+                                    id="exportType"
+                                    value={exportType}
+                                    onChange={(e) => handleExportInputChange('exportType', e.target.value)}
+                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${exportErrors.exportType ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
+                                        }`}
+                                >
+                                    <option value="">-- Seleccione una opción --</option>
+                                    <option value="criterios">Por criterios</option>
+                                    <option value="participacion">Por participación</option>
+                                </select>
+                                {exportErrors.exportType && (
+                                    <p className="text-error-600 text-sm mt-2 flex items-center">
+                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
+                                        {exportErrors.exportType}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Fecha de Inicio */}
+                            <div>
+                                <label htmlFor="exportStartDate" className="block text-sm font-semibold text-neutral-700 mb-2">
+                                    Fecha de Inicio
+                                </label>
+                                <input
+                                    id="exportStartDate"
+                                    type="date"
+                                    value={exportStartDate}
+                                    onChange={(e) => handleExportInputChange('exportStartDate', e.target.value)}
+                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${exportErrors.exportStartDate ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
+                                        }`}
+                                />
+                                {exportErrors.exportStartDate && (
+                                    <p className="text-error-600 text-sm mt-2 flex items-center">
+                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
+                                        {exportErrors.exportStartDate}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Fecha de Fin */}
+                            <div>
+                                <label htmlFor="exportEndDate" className="block text-sm font-semibold text-neutral-700 mb-2">
+                                    Fecha de Fin
+                                </label>
+                                <input
+                                    id="exportEndDate"
+                                    type="date"
+                                    value={exportEndDate}
+                                    onChange={(e) => handleExportInputChange('exportEndDate', e.target.value)}
+                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${exportErrors.exportEndDate ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
+                                        }`}
+                                />
+                                {exportErrors.exportEndDate && (
+                                    <p className="text-error-600 text-sm mt-2 flex items-center">
+                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
+                                        {exportErrors.exportEndDate}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Botones de acción */}
+                            <div className="flex space-x-3 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={closeExportModal}
+                                    className="flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleExportExcel}
+                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg"
+                                    disabled={isDownloadingExcel}
+                                >
+                                    {isDownloadingExcel ? 'Generando...' : 'Generar Excel'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

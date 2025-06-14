@@ -28,7 +28,10 @@ import {
     addParticipationEvaluation,
     getParticipationEvaluationsByMatrixId,
     updateParticipationEvaluation,
-    getParticipationEvaluationByMatrixAndStudent
+    getParticipationEvaluationByMatrixAndStudent,
+    getAllEvaluationMatrices, // New import
+    getAllStudentEvaluations, // New import
+    getAllParticipationEvaluations // New import
 } from '../utils/indexDB';
 
 interface AppState {
@@ -36,7 +39,7 @@ interface AppState {
     students: Student[];
     evaluationMatrices: EvaluationMatrix[];
     studentEvaluations: StudentEvaluation[];
-    participationEvaluations: ParticipationEvaluation[]; // New state
+    participationEvaluations: ParticipationEvaluation[];
     loading: boolean;
     error: string | null;
 
@@ -70,6 +73,11 @@ interface AppState {
     addNewParticipationEvaluation: (evaluation: Omit<ParticipationEvaluation, 'id'>) => Promise<string | undefined>;
     updateExistingParticipationEvaluation: (evaluation: ParticipationEvaluation) => Promise<void>;
     getParticipationEvaluation: (matrixId: string, studentId: string) => Promise<ParticipationEvaluation | undefined>;
+
+    // Global Get All functions for Excel Export (New)
+    getAllEvaluationMatrices: () => Promise<EvaluationMatrix[]>;
+    getAllStudentEvaluations: () => Promise<StudentEvaluation[]>; // Corrected type
+    getAllParticipationEvaluations: () => Promise<ParticipationEvaluation[]>;
 }
 
 
@@ -78,7 +86,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
     students: [],
     evaluationMatrices: [],
     studentEvaluations: [],
-    participationEvaluations: [], // Initialize new state
+    participationEvaluations: [],
     loading: false,
     error: null,
 
@@ -363,5 +371,40 @@ export const useAppStore = create<AppState>((set, _get) => ({
             set({ error: error.message });
         }
         return undefined;
+    },
+
+    // ===== Global Get All functions for Excel Export =====
+    getAllEvaluationMatrices: async () => {
+        set({ loading: true, error: null });
+        try {
+            const data = await getAllEvaluationMatrices();
+            set({ loading: false });
+            return data;
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
+            return [];
+        }
+    },
+    getAllStudentEvaluations: async () => {
+        set({ loading: true, error: null });
+        try {
+            const data = await getAllStudentEvaluations();
+            set({ loading: false });
+            return data;
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
+            return [];
+        }
+    },
+    getAllParticipationEvaluations: async () => {
+        set({ loading: true, error: null });
+        try {
+            const data = await getAllParticipationEvaluations();
+            set({ loading: false });
+            return data;
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
+            return [];
+        }
     },
 }));

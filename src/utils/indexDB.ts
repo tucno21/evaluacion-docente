@@ -341,3 +341,16 @@ export const getParticipationEvaluationByMatrixAndStudent = async (
     const evaluations = await getParticipationEvaluationsByMatrixId(matrixId);
     return evaluations.find(evaluation => evaluation.studentId === studentId);
 };
+
+// Global Get All functions for Excel Export
+export const getAllEvaluationMatrices = (): Promise<EvaluationMatrix[]> => {
+    return getAllItems<EvaluationMatrix>(STORES.evaluationMatrices);
+};
+
+export const getAllStudentEvaluations = (): Promise<StudentEvaluation[]> => {
+    return getAllItems<StudentEvaluation>(STORES.studentEvaluations);
+};
+
+export const getAllParticipationEvaluations = (): Promise<ParticipationEvaluation[]> => {
+    return getAllItems<ParticipationEvaluation>(STORES.participationEvaluations);
+};

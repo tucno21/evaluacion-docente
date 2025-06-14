@@ -248,17 +248,28 @@ const StudentsPage = () => {
         <div className="min-h-full space-y-6 px-2 pb-4 sm:px-6 lg:px-8">
             {/* Header y Resumen */}
             <div className="pt-1 pb-2 border-b border-neutral-200 sm:border-none">
-                <div className="flex items-center space-x-4 mb-4">
-                    <div className="bg-secondary-100 p-3 rounded-xl">
-                        <Users className="h-7 w-7 text-secondary-600" />
+                <div className="flex justify-between">
+                    <div className="flex items-center space-x-4 mb-4">
+                        <div className="bg-secondary-100 p-3 rounded-xl">
+                            <Users className="h-7 w-7 text-secondary-600" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-neutral-900">
+                                Estudiantes
+                            </h2>
+                            <p className="text-sm sm:text-base text-neutral-600">
+                                {students.length} estudiante{students.length !== 1 ? 's' : ''} registrado{students.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-xl sm:text-2xl font-bold text-neutral-900">
-                            Estudiantes
-                        </h2>
-                        <p className="text-sm sm:text-base text-neutral-600">
-                            {students.length} estudiante{students.length !== 1 ? 's' : ''} registrado{students.length !== 1 ? 's' : ''}
-                        </p>
+                    <div className="">
+                        <button
+                            onClick={() => setIsImportModalOpen(true)}
+                            className=" bg-gradient-to-r from-accent-600 to-accent-700 hover:from-accent-700 hover:to-accent-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl focus:outline-none z-40"
+                            aria-label="Importar estudiantes"
+                        >
+                            <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </button>
                     </div>
                 </div>
 
@@ -369,29 +380,34 @@ const StudentsPage = () => {
                 )}
             </div>
 
-            {/* Floating Action Button (FAB) para Importar */}
+
+            {/* Floating Action Button (FAB) para Registrar Estudiante */}
+            <button
+                onClick={() => setIsRegisterModalOpen(true)}
+                className="fixed bottom-6 right-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95 z-40"
+                aria-label="Registrar nuevo estudiante"
+            >
+                <PlusCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+
+            {/* Floating Action Button (FAB) para Importar
             <button
                 onClick={() => setIsImportModalOpen(true)}
                 className="fixed bottom-6 right-6 bg-gradient-to-r from-accent-600 to-accent-700 hover:from-accent-700 hover:to-accent-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-accent-200 active:scale-95 z-40"
                 aria-label="Importar estudiantes"
             >
                 <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
+            </button> */}
 
             {/* Modal de importación */}
             {isImportModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
-                            <div>
-                                <h2 className="text-xl font-bold text-neutral-900">
-                                    Importar Estudiantes
-                                </h2>
-                                <p className="text-sm text-neutral-600 mt-1">
-                                    Sube tu archivo Excel para añadir estudiantes.
-                                </p>
-                            </div>
+                        <div className="flex items-center justify-between px-6 py-2 border-b border-neutral-100">
+                            <h2 className="text-xl font-bold text-neutral-900">
+                                Importar Estudiantes
+                            </h2>
                             <button
                                 onClick={closeImportModal}
                                 className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
@@ -402,7 +418,7 @@ const StudentsPage = () => {
                         </div>
 
                         {/* Contenido del modal */}
-                        <div className="p-6 space-y-6">
+                        <div className="px-6 pt-2 pb-4 space-y-6">
                             {!selectedFile ? (
                                 <>
                                     <div className="mb-4">
@@ -421,7 +437,7 @@ const StudentsPage = () => {
 
                                     {/* Zona de arrastrar y soltar */}
                                     <div
-                                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${isDragOver
+                                        className={`border-2 border-dashed rounded-xl px-8 py-4 md:py-8 text-center transition-colors ${isDragOver
                                             ? 'border-primary-400 bg-primary-50'
                                             : 'border-neutral-300 hover:border-neutral-400'
                                             }`}
@@ -490,7 +506,7 @@ const StudentsPage = () => {
                                 <button
                                     type="button"
                                     onClick={closeImportModal}
-                                    className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
+                                    className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-200 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
                                     disabled={isProcessing}
                                 >
                                     Cancelar
@@ -499,7 +515,7 @@ const StudentsPage = () => {
                                     <button
                                         type="button"
                                         onClick={() => setSelectedFile(null)}
-                                        className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
+                                        className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-300 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
                                         disabled={isProcessing}
                                     >
                                         Cambiar archivo
@@ -610,15 +626,6 @@ const StudentsPage = () => {
                     </div>
                 </div>
             )}
-
-            {/* Floating Action Button (FAB) para Registrar Estudiante */}
-            <button
-                onClick={() => setIsRegisterModalOpen(true)}
-                className="fixed bottom-6 left-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95 z-40"
-                aria-label="Registrar nuevo estudiante"
-            >
-                <PlusCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
 
             {/* Modal de confirmación de eliminación */}
             <ModalAlert

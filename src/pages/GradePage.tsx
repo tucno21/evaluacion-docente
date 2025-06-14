@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy } from 'lucide-react'; // Added Copy icon
+import { Users, Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, FileDown } from 'lucide-react'; // Added Copy and FileDown icon
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
@@ -7,11 +7,24 @@ import type { EvaluationMatrix, EvaluationCriterion, Classroom } from '../types/
 import { v4 as uuidv4 } from 'uuid';
 import { getClassroomById, getAllClassrooms } from '../utils/indexDB'; // Added getAllClassrooms
 import ModalAlert from '../components/ModalAlert'; // Import ModalAlert
+import { generateEvaluationExcel } from '../utils/excel'; // Import the new excel function
 
 const GradePage = () => {
     const { gradeId } = useParams<{ gradeId: string }>();
     const navigate = useNavigate();
-    const { evaluationMatrices, loadMatricesByClassroom, addNewEvaluationMatrix, updateExistingMatrix, removeMatrix } = useAppStore();
+    const {
+        evaluationMatrices,
+        loadMatricesByClassroom,
+        addNewEvaluationMatrix,
+        updateExistingMatrix,
+        removeMatrix,
+        students, // Added for Excel download
+        loadStudentsByClassroom, // Added for Excel download
+        studentEvaluations, // Added for Excel download
+        loadEvaluationsByMatrix, // Added for Excel download
+        participationEvaluations, // Added for Excel download
+        loadParticipationEvaluationsByMatrix // Added for Excel download
+    } = useAppStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCopyModalOpen, setIsCopyModalOpen] = useState(false); // New state for copy modal
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false); // New state for delete alert modal
@@ -32,6 +45,7 @@ const GradePage = () => {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copyErrors, setCopyErrors] = useState<Record<string, string>>({}); // New state for copy modal errors
     const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]); // State for all classrooms
+    const [isDownloadingExcel, setIsDownloadingExcel] = useState(false); // New state for download loading
 
     // Agrupar matrices por mes y ordenar
     const groupedMatrices = evaluationMatrices
@@ -250,6 +264,43 @@ const GradePage = () => {
         setIsCopyModalOpen(true);
     };
 
+    const handleDownloadExcel = async (matrix: EvaluationMatrix) => {
+        setIsDownloadingExcel(true);
+        try {
+            // Ensure all necessary data is loaded for the specific matrix
+            await loadStudentsByClassroom(matrix.classroomId);
+            await loadEvaluationsByMatrix(matrix.id);
+            await loadParticipationEvaluationsByMatrix(matrix.id);
+
+            // Filter the global state to get only relevant data for this matrix
+            const relevantStudents = students.filter(s => s.classroomId === matrix.classroomId);
+            const relevantStudentEvaluations = studentEvaluations.filter(se => se.matrixId === matrix.id);
+            const relevantParticipationEvaluations = participationEvaluations.filter(pe => pe.matrixId === matrix.id);
+
+            const excelBlob = generateEvaluationExcel(
+                matrix,
+                relevantStudents,
+                relevantStudentEvaluations,
+                relevantParticipationEvaluations
+            );
+
+            const url = window.URL.createObjectURL(excelBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${matrix.name}_${new Date(matrix.date).toLocaleDateString('es')}_evaluacion.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error('Error generating or downloading Excel:', error);
+            alert('Hubo un error al generar el archivo Excel.');
+        } finally {
+            setIsDownloadingExcel(false);
+        }
+    };
+
     const goToEvaluation = (matrixId: string) => {
         navigate(`/grade/${gradeId}/matrix/${matrixId}/evaluate`);
     };
@@ -365,7 +416,15 @@ const GradePage = () => {
                                                     {/* Acciones */}
                                                     <div className="flex items-center space-x-1">
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); handleCopyMatrix(matrix); }} // New copy button
+                                                            onClick={(e) => { e.stopPropagation(); handleDownloadExcel(matrix); }}
+                                                            className="p-2 text-neutral-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                                                            aria-label="Descargar Excel"
+                                                            disabled={isDownloadingExcel}
+                                                        >
+                                                            <FileDown className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleCopyMatrix(matrix); }}
                                                             className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200"
                                                             aria-label="Copiar matriz"
                                                         >

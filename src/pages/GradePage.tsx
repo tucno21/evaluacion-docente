@@ -437,8 +437,9 @@ const GradePage = () => {
                 <div className="flex justify-center">
                     <button
                         onClick={() => setIsExportModalOpen(true)}
-                        className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm shadow-md"
+                        className={`flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm shadow-md ${Object.keys(groupedMatrices).length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                         aria-label="Exportar a Excel"
+                        disabled={Object.keys(groupedMatrices).length === 0}
                     >
                         <FileDown className="h-4 w-4" />
                         <span>Exportar a Excel</span>

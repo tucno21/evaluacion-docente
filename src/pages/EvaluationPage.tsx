@@ -126,15 +126,18 @@ const EvaluationPage = () => {
     }
 
     return (
-        <div className="min-h-full p-1 sm:p-4 bg-neutral-50">
-            {/* Header compacto - now handled by MainLayout */}
-            <div className="mb-2 bg-white p-2 rounded shadow-sm">
-                <div className="flex items-center space-x-2">
-                    {/* Back button is now handled by MainLayout */}
-                    <ClipboardList className="h-4 w-4 text-primary-600" />
+        <div className="min-h-full space-y-4 p-2 sm:p-6 bg-neutral-50">
+            {/* Información del Aula */}
+            <div className="bg-white  border border-neutral-200 shadow-sm p-3 mb-3">
+                <div className="flex items-center space-x-3">
+                    <div className="bg-gradient-to-br from-primary-100 to-primary-200 p-2.5 rounded-lg">
+                        <ClipboardList className="h-5 w-5 text-primary-600" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                        {/* Title is now in MainLayout */}
-                        <p className="text-xs text-neutral-600">
+                        <h2 className="font-semibold text-neutral-900 truncate text-base sm:text-lg">
+                            {currentMatrix?.name || 'Evaluación'}
+                        </h2>
+                        <p className="text-xs text-neutral-600 mt-0.5">
                             {currentClassroom.name} {currentClassroom.grade}-{currentClassroom.section}
                         </p>
                     </div>
@@ -142,28 +145,29 @@ const EvaluationPage = () => {
             </div>
 
             {/* Contenedor con scroll horizontal */}
-            <div className="bg-white border border-neutral-300 rounded shadow-sm overflow-x-auto">
+            <div className="bg-white border border-neutral-400 cursor-pointer shadow-sm hover:shadow-md overflow-x-auto">
                 <div className="min-w-full">
                     {/* Header */}
-                    <div className="bg-neutral-100 border-b border-neutral-300 flex">
+                    {/* Header */}
+                    <div className="bg-neutral-50 border-b border-neutral-400 flex">
                         {/* Columna N° fija */}
-                        <div className="w-8 border-r border-neutral-300 p-1 text-center font-bold text-xs bg-neutral-100 sticky left-0 z-20 flex-shrink-0">
+                        <div className="w-8 border-r border-neutral-400 p-2 text-center font-bold text-xs text-neutral-700 bg-neutral-100 sticky left-0 z-20 flex-shrink-0">
                             N°
                         </div>
                         {/* Columna Nombres fija */}
-                        <div className="w-40 border-r border-neutral-300 p-1 text-left font-bold text-xs bg-neutral-100 sticky left-8 z-20 flex-shrink-0">
+                        <div className="w-40 border-r border-neutral-400 p-2 text-left font-bold text-xs text-neutral-700 bg-neutral-100 sticky left-8 z-20 flex-shrink-0">
                             NOMBRES Y APELLIDOS
                         </div>
                         {/* Columnas de criterios - ocupan el espacio restante */}
                         <div className="flex flex-1 min-w-0">
                             {currentMatrix.criteria.map(criterion => (
-                                <div key={criterion.id} className="flex-1 min-w-20 border-r-2 border-black pt-1 text-center bg-yellow-100 flex flex-col justify-between">
-                                    <div className="text-xs leading-tight mb-1 font-bold break-words px-1 pb-1">{criterion.name}</div>
-                                    <div className="flex justify-center w-full">
-                                        <span className="bg-red-200 text-red-800 px-0.5 py-0.5 text-xs font-bold w-full">C</span>
-                                        <span className="bg-yellow-200 text-yellow-800 px-0.5 py-0.5 text-xs font-bold w-full">B</span>
-                                        <span className="bg-blue-200 text-blue-800 px-0.5 py-0.5 text-xs font-bold w-full">A</span>
-                                        <span className="bg-green-200 text-green-800 px-0.5 py-0.5 text-xs font-bold w-full">AD</span>
+                                <div key={criterion.id} className="flex-1 min-w-20 border-r border-black pt-2 text-center bg-neutral-100 flex flex-col justify-between">
+                                    <div className="text-xs leading-tight mb-1 font-bold break-words px-1 pb-1 text-neutral-700">{criterion.name}</div>
+                                    <div className="flex justify-center w-full border-t border-neutral-400">
+                                        <span className="bg-neutral-200 text-neutral-700 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400">C</span>
+                                        <span className="bg-neutral-200 text-neutral-700 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400">B</span>
+                                        <span className="bg-neutral-200 text-neutral-700 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400">A</span>
+                                        <span className="bg-neutral-200 text-neutral-700 px-0.5 py-0.5 text-xs font-bold w-full">AD</span>
                                     </div>
                                 </div>
                             ))}
@@ -176,14 +180,14 @@ const EvaluationPage = () => {
                         if (!studentEvaluation) return null;
 
                         return (
-                            <div key={student.id} className="flex hover:bg-neutral-50 border-b border-neutral-200">
+                            <div key={student.id} className="flex hover:bg-neutral-50 border-b border-neutral-400">
                                 {/* Número fijo */}
-                                <div className="w-8 border-r border-neutral-300 p-1 text-center font-medium text-xs bg-white sticky left-0 z-10 flex-shrink-0">
+                                <div className="w-8 border-r border-neutral-400 p-2 text-center font-medium text-xs bg-white sticky left-0 z-10 flex-shrink-0">
                                     {studentIndex + 1}
                                 </div>
                                 {/* Nombre fijo */}
-                                <div className="w-40 border-r border-neutral-300 p-1 text-left font-medium text-xs bg-white sticky left-8 z-10 flex-shrink-0">
-                                    <div className="truncate leading-tight">{student.fullName}</div>
+                                <div className="w-40 border-r border-neutral-400 p-2 text-left font-medium text-xs bg-white sticky left-8 z-10 flex-shrink-0">
+                                    <div className="truncate leading-tight text-neutral-800">{student.fullName}</div>
                                 </div>
                                 {/* Celdas de evaluación - ocupan el espacio restante */}
                                 <div className="flex flex-1 min-w-0">
@@ -194,21 +198,18 @@ const EvaluationPage = () => {
                                         return (
                                             <div key={criterion.id} className="flex-1 min-w-20 border-r-2 border-black bg-white">
                                                 <div className="grid grid-cols-4 h-8">
-                                                    {['C', 'B', 'A', 'AD'].map((level, levelIndex) => {
+                                                    {['C', 'B', 'A', 'AD'].map((level) => {
                                                         const isSelected = currentLevel === level;
-                                                        const bgColor = levelIndex === 0 ? 'hover:bg-red-50' :
-                                                            levelIndex === 1 ? 'hover:bg-yellow-50' :
-                                                                levelIndex === 2 ? 'hover:bg-blue-50' : 'hover:bg-green-50';
 
                                                         return (
                                                             <button
                                                                 key={level}
                                                                 className={`
-                                                                    h-8 border-r border-neutral-200 last:border-r-0
+                                                                    h-full border-r border-neutral-400 last:border-r-0
                                                                     flex items-center justify-center text-xs font-bold
-                                                                    touch-manipulation active:scale-95 transition-all
-                                                                    ${bgColor}
-                                                                    ${isSelected ? 'bg-neutral-800 text-white' : 'text-neutral-400 hover:text-neutral-800'}
+                                                                    touch-manipulation active:scale-95 transition-all duration-150
+                                                                   
+                                                                    ${isSelected ? 'bg-primary-600 text-white' : 'text-neutral-300 hover:bg-neutral-100'}
                                                                 `}
                                                                 onClick={() => handleLevelChange(student.id, criterion.id, level as AchievementLevel)}
                                                                 type="button"
@@ -229,24 +230,24 @@ const EvaluationPage = () => {
             </div>
 
             {/* Leyenda */}
-            <div className="mt-2 bg-white p-2 rounded shadow-sm">
-                <div className="text-xs font-bold text-neutral-700 mb-1">CRITERIOS DE EVALUACIÓN</div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-xs">
-                    <div className="flex items-center space-x-1">
-                        <span className="bg-red-200 text-red-800 px-1 py-0.5  font-bold">C</span>
-                        <span>En inicio</span>
+            <div className="mt-6 bg-white border border-neutral-200 shadow-sm p-2 md-p-4">
+                <div className="text-sm font-bold text-neutral-800 mb-2">Niveles de Logro</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+                    <div className="flex items-center space-x-2">
+                        <span className="bg-red-100 text-red-700 px-2 py-1 font-bold border border-red-700">C</span>
+                        <span className="text-neutral-700">En inicio</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                        <span className="bg-yellow-200 text-yellow-800 px-1 py-0.5 font-bold">B</span>
-                        <span>En proceso</span>
+                    <div className="flex items-center space-x-2">
+                        <span className="bg-yellow-100 text-yellow-700 px-2 py-1 font-bold border border-yellow-700">B</span>
+                        <span className="text-neutral-700">En proceso</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                        <span className="bg-blue-200 text-blue-800 px-1 py-0.5 font-bold">A</span>
-                        <span>Logro esperado</span>
+                    <div className="flex items-center space-x-2">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 font-bold border border-blue-700">A</span>
+                        <span className="text-neutral-700">Logro esperado</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                        <span className="bg-green-200 text-green-800 px-1 py-0.5 font-bold">AD</span>
-                        <span>Logro destacado</span>
+                    <div className="flex items-center space-x-2">
+                        <span className="bg-green-100 text-green-700 px-2 py-1 font-bold border border-green-700">AD</span>
+                        <span className="text-neutral-700">Logro destacado</span>
                     </div>
                 </div>
             </div>

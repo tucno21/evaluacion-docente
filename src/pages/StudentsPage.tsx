@@ -123,9 +123,8 @@ const StudentsPage = () => {
 
             setIsProcessing(false);
             closeImportModal();
-            alert(`Se importaron ${studentsToSave.length} estudiantes correctamente`);
-            // Redirect to the same classroom's student page to refresh the view
-            navigate(`/classrooms/${classroomId}/students`);
+            // alert(`Se importaron ${studentsToSave.length} estudiantes correctamente`); // Removed alert
+            // No redirection after import, stay on the same view
         } catch (error) {
             console.error('Error al importar estudiantes:', error);
             alert('Error al importar estudiantes: ' + error);
@@ -190,7 +189,6 @@ const StudentsPage = () => {
             try {
                 await removeStudent(studentToDelete.id);
                 closeDeleteModal();
-                alert(`Estudiante ${studentToDelete.fullName} eliminado correctamente.`);
             } catch (error) {
                 console.error('Error al eliminar estudiante:', error);
                 alert('Error al eliminar estudiante: ' + error);

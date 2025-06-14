@@ -1,14 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { ClipboardList } from 'lucide-react';
-import type { StudentEvaluation, AchievementLevel, CriterionEvaluation, ParticipationEvaluation, ParticipationLevel } from '../types/types';
+import type { StudentEvaluation, AchievementLevel, ParticipationEvaluation, ParticipationLevel } from '../types/types';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
 
-
 const EvaluationPage = () => {
-    const { classroomId: classroomIdParam, matrixId: matrixIdParam } = useParams<{ classroomId: string; matrixId: string }>();
+    // --- INICIO: Herramientas de depuración ---
+    const renderCount = useRef(1);
+    useEffect(() => {
+        // Este log se mostrará en cada renderización, permitiéndote contar cuántas veces ocurre.
+        console.log(`[DEBUG] Componente renderizado: ${renderCount.current} veces.`);
+        renderCount.current += 1;
+    });
 
+    useEffect(() => {
+        // Este log se mostrará UNA SOLA VEZ cuando el componente se "monta".
+        console.log("[DEBUG] El componente EvaluationPage se ha montado.");
+    }, []);
+    // --- FIN: Herramientas de depuración ---
+
+    const { classroomId: classroomIdParam, matrixId: matrixIdParam } = useParams<{ classroomId: string; matrixId: string }>();
     const classroomId = classroomIdParam || '';
     const matrixId = matrixIdParam || '';
 
@@ -23,49 +35,66 @@ const EvaluationPage = () => {
         loadEvaluationsByMatrix,
         addNewStudentEvaluation,
         updateExistingStudentEvaluation,
-        participationEvaluations, // New
-        loadParticipationEvaluationsByMatrix, // New
-        addNewParticipationEvaluation, // New
-        updateExistingParticipationEvaluation, // New
+        participationEvaluations,
+        loadParticipationEvaluationsByMatrix,
+        addNewParticipationEvaluation,
+        updateExistingParticipationEvaluation,
         loading,
         error
     } = useAppStore();
-    const currentClassroom = classrooms.find(c => c.id === classroomId);
-    const currentMatrix = evaluationMatrices.find(m => m.id === matrixId);
 
-    const [evaluationsState, setEvaluationsState] = useState<StudentEvaluation[]>([]);
-    const [participationEvaluationsState, setParticipationEvaluationsState] = useState<ParticipationEvaluation[]>([]); // New state
     const { setHeaderTitle } = useHeaderStore();
 
+    const currentClassroom = useMemo(() => classrooms.find(c => c.id === classroomId), [classrooms, classroomId]);
+    const currentMatrix = useMemo(() => evaluationMatrices.find(m => m.id === matrixId), [evaluationMatrices, matrixId]);
+
+    // EFECTO CONSOLIDADO PARA CARGA DE DATOS
+    // Este efecto se encarga de toda la carga de datos inicial.
     useEffect(() => {
+        console.log("[DEBUG] Ejecutando efecto de carga de datos...");
         loadClassrooms();
+
         if (classroomId) {
             loadMatricesByClassroom(classroomId);
         }
         if (matrixId) {
             loadEvaluationsByMatrix(matrixId);
-            loadParticipationEvaluationsByMatrix(matrixId); // New: Load participation data
+            loadParticipationEvaluationsByMatrix(matrixId);
         }
-    }, [classroomId, matrixId, loadClassrooms, loadMatricesByClassroom, loadEvaluationsByMatrix, loadParticipationEvaluationsByMatrix]); // Added loadParticipationEvaluationsByMatrix
 
-    useEffect(() => {
-        if (currentMatrix && currentMatrix.classroomId) {
+        // Se ha añadido `currentMatrix?.classroomId` como dependencia directa
+        // para la carga de estudiantes, en lugar de un segundo `useEffect`.
+        if (currentMatrix?.classroomId) {
             loadStudentsByClassroom(currentMatrix.classroomId);
         }
-    }, [currentMatrix, loadStudentsByClassroom]);
 
+        // Las funciones de carga del store de Zustand suelen ser estables.
+        // Si no lo son, deberían envolverse en `useCallback` en la definición del store.
+        // Las quitamos de las dependencias para evitar re-ejecuciones si la referencia de la función cambia.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [classroomId, matrixId, currentMatrix?.classroomId]); // Dependencias más estables y precisas
+
+
+    // EFECTO PARA ACTUALIZAR EL TÍTULO DEL HEADER
+    // Separado para mayor claridad y para que se ejecute solo cuando el título cambie.
     useEffect(() => {
-        if (!currentMatrix || students.length === 0) {
+        if (currentMatrix) {
+            setHeaderTitle(currentMatrix.name);
+        } else {
             setHeaderTitle('Cargando evaluación...');
-            return;
         }
+    }, [currentMatrix, setHeaderTitle]);
 
-        setHeaderTitle(currentMatrix.name);
 
-        // Initialize StudentEvaluations
-        const initialEvaluations: StudentEvaluation[] = students.map(student => {
-            const existingEvaluation = studentEvaluations.find(se => se.studentId === student.id);
+    // DERIVACIÓN DE ESTADO CON `useMemo` EN LUGAR DE `useState` + `useEffect`
+    // Calculamos los datos para la vista directamente desde el store.
+    // `useMemo` asegura que este cálculo complejo solo se ejecute cuando los datos relevantes cambian.
+    const memoizedEvaluations = useMemo(() => {
+        if (!currentMatrix || students.length === 0) return [];
 
+        console.log("[DEBUG] Recalculando `memoizedEvaluations`.");
+        return students.map(student => {
+            const existingEvaluation = studentEvaluations.find(se => se.studentId === student.id && se.matrixId === matrixId);
             const mergedCriteriaEvaluations = currentMatrix.criteria.map(criterion => {
                 const existingCriterionEval = existingEvaluation?.criteriaEvaluations.find(ce => ce.criterionId === criterion.id);
                 return existingCriterionEval || {
@@ -74,48 +103,41 @@ const EvaluationPage = () => {
                 };
             });
 
-            if (existingEvaluation) {
-                return {
-                    ...existingEvaluation,
-                    criteriaEvaluations: mergedCriteriaEvaluations
-                };
-            } else {
-                return {
-                    id: '',
-                    studentId: student.id,
-                    matrixId: matrixId,
-                    criteriaEvaluations: mergedCriteriaEvaluations
-                };
-            }
+            return {
+                id: existingEvaluation?.id || '',
+                studentId: student.id,
+                matrixId: matrixId,
+                criteriaEvaluations: mergedCriteriaEvaluations
+            };
         });
-        setEvaluationsState(initialEvaluations);
+    }, [students, currentMatrix, studentEvaluations, matrixId]);
 
-        // Initialize ParticipationEvaluations
-        const initialParticipationEvaluations: ParticipationEvaluation[] = students.map(student => {
-            const existingParticipation = participationEvaluations.find(pe => pe.studentId === student.id);
-            if (existingParticipation) {
-                return existingParticipation;
-            } else {
-                return {
-                    id: '',
-                    studentId: student.id,
-                    matrixId: matrixId,
-                    level: '' as ParticipationLevel // Default empty level
-                };
-            }
+    const memoizedParticipations = useMemo(() => {
+        if (students.length === 0) return [];
+
+        console.log("[DEBUG] Recalculando `memoizedParticipations`.");
+        return students.map(student => {
+            const existingParticipation = participationEvaluations.find(pe => pe.studentId === student.id && pe.matrixId === matrixId);
+            return existingParticipation || {
+                id: '',
+                studentId: student.id,
+                matrixId: matrixId,
+                level: '' as ParticipationLevel
+            };
         });
-        setParticipationEvaluationsState(initialParticipationEvaluations);
+    }, [students, participationEvaluations, matrixId]);
 
-    }, [students, currentMatrix, studentEvaluations, participationEvaluations, matrixId, setHeaderTitle]);
+
+    // HANDLERS SIMPLIFICADOS
+    // Ya no necesitan la lógica de "actualización optimista" porque no hay estado local.
+    // Simplemente llaman a la acción del store y confían en que React re-renderizará el componente
+    // cuando los datos del store (props) cambien.
 
     const handleLevelChange = async (studentId: string, criterionId: string, level: AchievementLevel) => {
-        const studentEvaluationToUpdate = evaluationsState.find((se: StudentEvaluation) => se.studentId === studentId);
+        const studentEvaluationToUpdate = memoizedEvaluations.find(se => se.studentId === studentId);
+        if (!studentEvaluationToUpdate) return;
 
-        if (!studentEvaluationToUpdate) {
-            return;
-        }
-
-        const updatedCriteria = studentEvaluationToUpdate.criteriaEvaluations.map((ce: CriterionEvaluation) =>
+        const updatedCriteria = studentEvaluationToUpdate.criteriaEvaluations.map(ce =>
             ce.criterionId === criterionId ? { ...ce, level } : ce
         );
 
@@ -124,29 +146,14 @@ const EvaluationPage = () => {
             criteriaEvaluations: updatedCriteria
         };
 
-        // 1. Actualización optimista: renderiza el cambio en la UI inmediatamente.
-        setEvaluationsState(prevEvaluations =>
-            prevEvaluations.map((se: StudentEvaluation) => (se.studentId === studentId ? updatedEvaluation : se))
-        );
-
-        // 2. Sincronización con el backend/store global en segundo plano.
-        if (!updatedEvaluation.id) {
-            const newId = await addNewStudentEvaluation(updatedEvaluation);
-            if (newId) {
-                // Actualiza el ID en el estado local para que la siguiente vez se use 'update' en lugar de 'add'
-                setEvaluationsState(prevEvaluations =>
-                    prevEvaluations.map((se) =>
-                        se.studentId === studentId ? { ...updatedEvaluation, id: newId } : se
-                    )
-                );
-            }
-        } else {
-            try {
+        try {
+            if (!updatedEvaluation.id) {
+                await addNewStudentEvaluation(updatedEvaluation);
+            } else {
                 await updateExistingStudentEvaluation(updatedEvaluation);
-            } catch (e: any) {
-                console.error('Error updating existing evaluation:', e.message, updatedEvaluation);
-                // Opcional: Revertir el estado si la actualización falla
             }
+        } catch (e: any) {
+            console.error('Error al guardar la evaluación:', e.message, updatedEvaluation);
         }
     };
 
@@ -156,43 +163,28 @@ const EvaluationPage = () => {
         const nextIndex = (currentIndex + 1) % participationLevels.length;
         const nextLevel = participationLevels[nextIndex];
 
-        const studentParticipationToUpdate = participationEvaluationsState.find((pe: ParticipationEvaluation) => pe.studentId === studentId);
+        const studentParticipationToUpdate = memoizedParticipations.find(pe => pe.studentId === studentId);
 
         const updatedParticipation: ParticipationEvaluation = {
             ...(studentParticipationToUpdate || { id: '', studentId, matrixId }),
             level: nextLevel
         };
 
-        // 1. Actualización optimista
-        setParticipationEvaluationsState(prevParticipations =>
-            prevParticipations.map((pe: ParticipationEvaluation) => (pe.studentId === studentId ? updatedParticipation : pe))
-        );
-
-        // 2. Sincronización con el backend/store global
-        if (!updatedParticipation.id) {
-            const newId = await addNewParticipationEvaluation(updatedParticipation);
-            if (newId) {
-                setParticipationEvaluationsState(prevParticipations =>
-                    prevParticipations.map((pe) =>
-                        pe.studentId === studentId ? { ...updatedParticipation, id: newId } : pe
-                    )
-                );
-            }
-        } else {
-            try {
+        try {
+            if (!updatedParticipation.id) {
+                await addNewParticipationEvaluation(updatedParticipation);
+            } else {
                 await updateExistingParticipationEvaluation(updatedParticipation);
-            } catch (e: any) {
-                console.error('Error updating participation evaluation:', e.message, updatedParticipation);
-                // Opcional: Revertir el estado si la actualización falla
             }
+        } catch (e: any) {
+            console.error('Error al guardar la participación:', e.message, updatedParticipation);
         }
     };
 
-    if (loading) {
-        return <div className="text-center py-12">Cargando...</div>;
-    }
 
-    if (loading) {
+    // --- RENDERIZADO DEL COMPONENTE ---
+
+    if (loading && students.length === 0) {
         return <div className="text-center py-12">Cargando...</div>;
     }
 
@@ -207,7 +199,7 @@ const EvaluationPage = () => {
     return (
         <div className="min-h-full space-y-4 p-2 sm:p-6 bg-neutral-50">
             {/* Información del Aula */}
-            <div className="bg-white  border border-neutral-200 shadow-sm p-3 mb-3">
+            <div className="bg-white border border-neutral-200 shadow-sm p-3 mb-3">
                 <div className="flex items-center space-x-3">
                     <div className="bg-gradient-to-br from-primary-100 to-primary-200 p-2.5 rounded-lg">
                         <ClipboardList className="h-5 w-5 text-primary-600" />
@@ -234,7 +226,6 @@ const EvaluationPage = () => {
                         <div className="w-40 border-r border-black p-2 text-left font-bold text-xs text-neutral-700 bg-neutral-100 sticky left-8 z-20 flex-shrink-0">
                             NOMBRES Y APELLIDOS
                         </div>
-                        {/* New PARTICIPO Header */}
                         <div className="w-7 md:w-10 border-r border-black p-2 text-left font-bold text-xs text-neutral-700 bg-neutral-100 sticky left-8 z-0 flex-shrink-0">
                             PT
                         </div>
@@ -255,11 +246,13 @@ const EvaluationPage = () => {
 
                     {/* Filas de estudiantes */}
                     {students.map((student, studentIndex) => {
-                        const studentEvaluation = evaluationsState.find(se => se.studentId === student.id);
-                        const studentParticipation = participationEvaluationsState.find(pe => pe.studentId === student.id);
-                        const currentParticipationLevel = studentParticipation?.level || '';
+                        // Obtenemos los datos ya calculados desde las variables "memoized"
+                        const studentEvaluation = memoizedEvaluations.find(se => se.studentId === student.id);
+                        const studentParticipation = memoizedParticipations.find(pe => pe.studentId === student.id);
 
-                        if (!studentEvaluation) return null;
+                        if (!studentEvaluation) return null; // Importante para evitar errores si los datos aún no están listos
+
+                        const currentParticipationLevel = studentParticipation?.level || '';
 
                         return (
                             <div key={student.id} className="flex hover:bg-neutral-50 border-b border-neutral-400">
@@ -272,7 +265,7 @@ const EvaluationPage = () => {
                                     <div className="truncate leading-tight text-neutral-800">{student.fullName}</div>
                                 </div>
                                 {/* PARTICIPO Cell */}
-                                <div className="w-7 md:w-10 border-r border-black bg-white left-48 z-0 flex-shrink-0">
+                                <div className="w-7 md:w-10 border-r border-black bg-white sticky left-8 z-0 flex-shrink-0">
                                     <button
                                         className={`
                                             h-full w-full flex items-center justify-center text-xs font-bold
@@ -292,11 +285,10 @@ const EvaluationPage = () => {
                                         const currentLevel = criterionEvaluation?.level || '';
 
                                         return (
-                                            <div key={criterion.id} className="flex-1 min-w-20 border-r-1 border-black bg-white">
+                                            <div key={criterion.id} className="flex-1 min-w-20 border-r border-black bg-white">
                                                 <div className="grid grid-cols-4 h-8">
                                                     {['C', 'B', 'A', 'AD'].map((level) => {
                                                         const isSelected = currentLevel === level;
-
                                                         return (
                                                             <button
                                                                 key={level}
@@ -324,7 +316,7 @@ const EvaluationPage = () => {
                 </div>
             </div>
 
-            {/* Leyenda */}
+            {/* Leyenda (sin cambios) */}
             <div className="mt-6 bg-white border border-neutral-200 shadow-sm p-2 md-p-4">
                 <div className="text-sm font-bold text-neutral-800 mb-2">Niveles de Logro</div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">

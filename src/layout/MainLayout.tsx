@@ -77,8 +77,8 @@ const MainLayout = () => {
             </header>
 
             {/* Contenido principal */}
-            <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 sm:py-6">
-                <div className="p-4 sm:p-6">
+            <main className="flex-1 max-w-7xl mx-auto w-full px-2 sm:px-6 py-4 sm:py-6">
+                <div className="py-4 sm:p-6">
                     <Outlet />
                 </div>
             </main>

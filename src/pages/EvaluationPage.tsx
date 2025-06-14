@@ -157,13 +157,13 @@ const EvaluationPage = () => {
                         {/* Columnas de criterios - ocupan el espacio restante */}
                         <div className="flex flex-1 min-w-0">
                             {currentMatrix.criteria.map(criterion => (
-                                <div key={criterion.id} className="flex-1 min-w-20 border-r-2 border-black p-1 text-center bg-yellow-100">
-                                    <div className="text-xs leading-tight mb-1 font-bold break-words">{criterion.name}</div>
-                                    <div className="flex justify-center space-x-0.5">
-                                        <span className="bg-red-200 text-red-800 px-0.5 py-0.5 rounded text-xs font-bold">C</span>
-                                        <span className="bg-yellow-200 text-yellow-800 px-0.5 py-0.5 rounded text-xs font-bold">B</span>
-                                        <span className="bg-blue-200 text-blue-800 px-0.5 py-0.5 rounded text-xs font-bold">A</span>
-                                        <span className="bg-green-200 text-green-800 px-0.5 py-0.5 rounded text-xs font-bold">AD</span>
+                                <div key={criterion.id} className="flex-1 min-w-20 border-r-2 border-black pt-1 text-center bg-yellow-100 flex flex-col justify-between">
+                                    <div className="text-xs leading-tight mb-1 font-bold break-words px-1 pb-1">{criterion.name}</div>
+                                    <div className="flex justify-center w-full">
+                                        <span className="bg-red-200 text-red-800 px-0.5 py-0.5 text-xs font-bold w-full">C</span>
+                                        <span className="bg-yellow-200 text-yellow-800 px-0.5 py-0.5 text-xs font-bold w-full">B</span>
+                                        <span className="bg-blue-200 text-blue-800 px-0.5 py-0.5 text-xs font-bold w-full">A</span>
+                                        <span className="bg-green-200 text-green-800 px-0.5 py-0.5 text-xs font-bold w-full">AD</span>
                                     </div>
                                 </div>
                             ))}
@@ -233,19 +233,19 @@ const EvaluationPage = () => {
                 <div className="text-xs font-bold text-neutral-700 mb-1">CRITERIOS DE EVALUACIÓN</div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-xs">
                     <div className="flex items-center space-x-1">
-                        <span className="bg-red-200 text-red-800 px-1 py-0.5 rounded font-bold">C</span>
+                        <span className="bg-red-200 text-red-800 px-1 py-0.5  font-bold">C</span>
                         <span>En inicio</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                        <span className="bg-yellow-200 text-yellow-800 px-1 py-0.5 rounded font-bold">B</span>
+                        <span className="bg-yellow-200 text-yellow-800 px-1 py-0.5 font-bold">B</span>
                         <span>En proceso</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                        <span className="bg-blue-200 text-blue-800 px-1 py-0.5 rounded font-bold">A</span>
+                        <span className="bg-blue-200 text-blue-800 px-1 py-0.5 font-bold">A</span>
                         <span>Logro esperado</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                        <span className="bg-green-200 text-green-800 px-1 py-0.5 rounded font-bold">AD</span>
+                        <span className="bg-green-200 text-green-800 px-1 py-0.5 font-bold">AD</span>
                         <span>Logro destacado</span>
                     </div>
                 </div>

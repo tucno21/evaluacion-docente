@@ -13,7 +13,7 @@ const MainLayout = () => {
     React.useEffect(() => {
         setShowBackButton(location.pathname !== '/');
         if (location.pathname === '/') {
-            setHeaderTitle('Evaluación Docente'); // Reset to default title
+            setHeaderTitle('Evalúa Docente'); // Reset to default title
         }
     }, [location.pathname, setHeaderTitle]);
 

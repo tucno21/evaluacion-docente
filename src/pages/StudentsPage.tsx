@@ -8,6 +8,8 @@ import { getClassroomById, getAllClassrooms } from '../utils/indexDB';
 import { useHeaderStore } from '../store/useHeaderStore';
 import type { Classroom, Student } from '../types/types';
 import ModalAlert from '../components/ModalAlert';
+import Inputs from '../components/Inputs'; // Import Inputs component
+import Select from '../components/Select'; // Import Select component
 import { Trash2, PlusCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -279,7 +281,7 @@ const StudentsPage = () => {
                         placeholder="Buscar estudiante por nombre..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                        className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
                     />
                 </div>
             </div>
@@ -560,37 +562,27 @@ const StudentsPage = () => {
                         {/* Formulario de copiar */}
                         <div className="p-6 space-y-5">
                             {/* Seleccionar Aula */}
-                            <div>
-                                <label htmlFor="copyToClassroom" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                    Seleccionar Aula de Destino
-                                </label>
-                                <select
-                                    id="copyToClassroom"
-                                    value={copyToClassroomId}
-                                    onChange={(e) => {
-                                        setCopyToClassroomId(e.target.value);
-                                        if (copyErrors.classroomId) {
-                                            setCopyErrors(prev => ({ ...prev, classroomId: '' }));
-                                        }
-                                    }}
-                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${copyErrors.classroomId ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                    disabled={isProcessing}
-                                >
-                                    <option value="">-- Selecciona un aula --</option>
-                                    {allClassrooms.map((classroom) => (
-                                        <option key={classroom.id} value={classroom.id}>
-                                            {classroom.name} - {classroom.grade}° {classroom.section}
-                                        </option>
-                                    ))}
-                                </select>
-                                {copyErrors.classroomId && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {copyErrors.classroomId}
-                                    </p>
-                                )}
-                            </div>
+                            <Select
+                                label="Seleccionar Aula de Destino"
+                                id="copyToClassroom"
+                                value={copyToClassroomId}
+                                onChange={(e) => {
+                                    setCopyToClassroomId(e.target.value);
+                                    if (copyErrors.classroomId) {
+                                        setCopyErrors(prev => ({ ...prev, classroomId: '' }));
+                                    }
+                                }}
+                                error={copyErrors.classroomId}
+                                options={[
+                                    { value: '', label: '-- Selecciona un aula --' },
+                                    ...allClassrooms.map(classroom => ({
+                                        value: classroom.id,
+                                        label: `${classroom.name} - ${classroom.grade}° ${classroom.section}`
+                                    }))
+                                ]}
+                                disabled={isProcessing}
+                                selectClassName="focus:ring-primary-500"
+                            />
 
                             {isProcessing && (
                                 <div className="bg-info-50 border border-info-200 rounded-lg p-4">
@@ -661,32 +653,22 @@ const StudentsPage = () => {
 
                         {/* Contenido del modal */}
                         <div className="p-6 space-y-5">
-                            <div>
-                                <label htmlFor="newStudentName" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                    Nombre Completo
-                                </label>
-                                <input
-                                    type="text"
-                                    id="newStudentName"
-                                    value={newStudentName}
-                                    onChange={(e) => {
-                                        setNewStudentName(e.target.value);
-                                        if (registerErrors.fullName) {
-                                            setRegisterErrors(prev => ({ ...prev, fullName: '' }));
-                                        }
-                                    }}
-                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${registerErrors.fullName ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                    placeholder="Ej: Juan Pérez García"
-                                    disabled={isProcessing}
-                                />
-                                {registerErrors.fullName && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {registerErrors.fullName}
-                                    </p>
-                                )}
-                            </div>
+                            <Inputs
+                                label="Nombre Completo"
+                                id="newStudentName"
+                                type="text"
+                                value={newStudentName}
+                                onChange={(e) => {
+                                    setNewStudentName(e.target.value);
+                                    if (registerErrors.fullName) {
+                                        setRegisterErrors(prev => ({ ...prev, fullName: '' }));
+                                    }
+                                }}
+                                placeholder="Ej: Juan Pérez García"
+                                disabled={isProcessing}
+                                error={registerErrors.fullName}
+                                inputClassName="focus:ring-primary-500"
+                            />
 
                             {isProcessing && (
                                 <div className="bg-info-50 border border-info-200 rounded-lg p-4">

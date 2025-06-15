@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import type { Classroom } from '../types/types';
 import ModalAlert from '../components/ModalAlert';
+import Inputs from '../components/Inputs'; // Import Inputs component
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -236,74 +237,47 @@ const HomePage = () => {
                         {/* Formulario */}
                         <div className="p-6 space-y-5">
                             {/* Nombre del aula */}
-                            <div>
-                                <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                                    Nombre del Aula
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => handleInputChange('name', e.target.value)}
-                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${errors.name ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                    placeholder="Ej: Matemáticas 1°A"
-                                />
-                                {errors.name && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {errors.name}
-                                    </p>
-                                )}
-                            </div>
+                            <Inputs
+                                label="Nombre del Aula"
+                                id="classroomName"
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                placeholder="Ej: Matemáticas 1°A"
+                                error={errors.name}
+                                inputClassName="focus:ring-primary-500"
+                            />
 
                             {/* Grado y Sección en fila */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                                        Grado
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={formData.grade}
-                                        onChange={(e) => handleInputChange('grade', e.target.value)}
-                                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${errors.grade ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                            }`}
-                                        placeholder="Ej: 1"
-                                        min="1"
-                                        max="6"
-                                    />
-                                    {errors.grade && (
-                                        <p className="text-error-600 text-sm mt-2 flex items-center">
-                                            <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                            {errors.grade}
-                                        </p>
-                                    )}
-                                </div>
+                                <Inputs
+                                    label="Grado"
+                                    id="classroomGrade"
+                                    type="number"
+                                    value={formData.grade}
+                                    onChange={(e) => handleInputChange('grade', e.target.value)}
+                                    placeholder="Ej: 1"
+                                    min="1"
+                                    max="6"
+                                    error={errors.grade}
+                                    inputClassName="focus:ring-primary-500"
+                                />
 
-                                <div>
-                                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                                        Sección
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.section}
-                                        onChange={(e) => handleInputChange('section', e.target.value)}
-                                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${errors.section ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                            }`}
-                                        placeholder="Ej: A"
-                                        maxLength={1}
-                                        onInput={(e: React.FormEvent<HTMLInputElement>) => {
-                                            e.currentTarget.value = e.currentTarget.value.toUpperCase();
-                                            handleInputChange('section', e.currentTarget.value);
-                                        }}
-                                    />
-                                    {errors.section && (
-                                        <p className="text-error-600 text-sm mt-2 flex items-center">
-                                            <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                            {errors.section}
-                                        </p>
-                                    )}
-                                </div>
+                                <Inputs
+                                    label="Sección"
+                                    id="classroomSection"
+                                    type="text"
+                                    value={formData.section}
+                                    onChange={(e) => handleInputChange('section', e.target.value)}
+                                    placeholder="Ej: A"
+                                    maxLength={1}
+                                    onInput={(e: React.FormEvent<HTMLInputElement>) => {
+                                        e.currentTarget.value = e.currentTarget.value.toUpperCase();
+                                        handleInputChange('section', e.currentTarget.value);
+                                    }}
+                                    error={errors.section}
+                                    inputClassName="focus:ring-primary-500"
+                                />
                             </div>
 
                             {/* Botones */}

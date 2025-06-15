@@ -7,6 +7,8 @@ import type { EvaluationMatrix, EvaluationCriterion, Classroom } from '../types/
 import { v4 as uuidv4 } from 'uuid';
 import { getClassroomById, getAllClassrooms } from '../utils/indexDB'; // Added getAllClassrooms
 import ModalAlert from '../components/ModalAlert'; // Import ModalAlert
+import Inputs from '../components/Inputs'; // Import Inputs component
+import Select from '../components/Select'; // Import Select component
 import { generateEvaluationExcel, generateParticipationExcel, generateCriteriaExcel } from '../utils/excel'; // Import the new excel functions
 
 const GradePage = () => {
@@ -568,7 +570,7 @@ const GradePage = () => {
             {/* Botón flotante para nueva matriz - Muy importante */}
             <button
                 onClick={() => setIsModalOpen(true)}
-                className="fixed bottom-6 right-6 bg-gradient-to-r from-accent-600 to-accent-700 hover:from-accent-700 hover:to-accent-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-accent-200 active:scale-95"
+                className="fixed bottom-6 right-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95"
                 aria-label="Nueva matriz de evaluación"
             >
                 <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -600,48 +602,28 @@ const GradePage = () => {
                         {/* Formulario */}
                         <div className="px-4 py-3 space-y-5">
                             {/* Nombre de la evaluación */}
-                            <div>
-                                <label htmlFor="evaluationName" className="block text-sm font-semibold text-neutral-700 mb-1">
-                                    Nombre de la Evaluación
-                                </label>
-                                <input
-                                    id="evaluationName"
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => handleInputChange('name', e.target.value)}
-                                    className={`w-full px-3 py-2 md:px-4 md:py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-all ${errors.name ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                    placeholder="Ej: Evaluación de Matemáticas - U1"
-                                />
-                                {errors.name && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {errors.name}
-                                    </p>
-                                )}
-                            </div>
+                            <Inputs
+                                label="Nombre de la Evaluación"
+                                id="evaluationName"
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                placeholder="Ej: Evaluación de Matemáticas - U1"
+                                error={errors.name}
+                                inputClassName="focus:ring-primary-500"
+                            />
 
                             {/* Fecha */}
-                            <div>
-                                <label htmlFor="evaluationDate" className="block text-sm font-semibold text-neutral-700 mb-1">
-                                    Fecha de Evaluación
-                                </label>
-                                <input
-                                    id="evaluationDate"
-                                    type="date"
-                                    value={formData.date}
-                                    min={today}
-                                    onChange={(e) => handleInputChange('date', e.target.value)}
-                                    className={`w-full px-3 py-2 md:px-4 md:py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-all ${errors.date ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                />
-                                {errors.date && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {errors.date}
-                                    </p>
-                                )}
-                            </div>
+                            <Inputs
+                                label="Fecha de Evaluación"
+                                id="evaluationDate"
+                                type="date"
+                                value={formData.date}
+                                min={today}
+                                onChange={(e) => handleInputChange('date', e.target.value)}
+                                error={errors.date}
+                                inputClassName="focus:ring-primary-500"
+                            />
 
                             {/* Criterios de evaluación */}
                             <div>
@@ -658,12 +640,13 @@ const GradePage = () => {
                                     {criteria.map((criterion, index) => (
                                         <div key={criterion.id} className="flex items-center space-x-2">
                                             <div className="flex-1">
-                                                <input
+                                                <Inputs
+                                                    id={`criterion-${criterion.id}`}
                                                     type="text"
                                                     value={criterion.name}
                                                     onChange={(e) => handleCriteriaChange(criterion.id, e.target.value)}
-                                                    className="w-full px-3 py-2 md:px-4 md:py-3 border-2 border-neutral-200 hover:border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent transition-all"
                                                     placeholder={`Criterio ${index + 1}`}
+                                                    inputClassName="focus:ring-primary-500"
                                                 />
                                             </div>
 
@@ -712,7 +695,7 @@ const GradePage = () => {
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-accent-600 to-accent-700 hover:from-accent-700 hover:to-accent-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg"
+                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg"
                                 >
                                     {editingMatrixId ? 'Guardar' : 'Crear'}
                                 </button>
@@ -748,53 +731,31 @@ const GradePage = () => {
                         {/* Formulario de copiar */}
                         <div className="p-6 space-y-5">
                             {/* Seleccionar Aula */}
-                            <div>
-                                <label htmlFor="copyClassroom" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                    Seleccionar Aula
-                                </label>
-                                <select
-                                    id="copyClassroom"
-                                    value={copyFormData.classroomId}
-                                    onChange={(e) => handleCopyInputChange('classroomId', e.target.value)}
-                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${copyErrors.classroomId ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                >
-                                    <option value="">-- Selecciona un aula --</option>
-                                    {allClassrooms.map((classroom) => (
-                                        <option key={classroom.id} value={classroom.id}>
-                                            {classroom.name} - {classroom.grade}° {classroom.section}
-                                        </option>
-                                    ))}
-                                </select>
-                                {copyErrors.classroomId && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {copyErrors.classroomId}
-                                    </p>
-                                )}
-                            </div>
+                            <Select
+                                label="Seleccionar Aula"
+                                id="copyClassroom"
+                                value={copyFormData.classroomId}
+                                onChange={(e) => handleCopyInputChange('classroomId', e.target.value)}
+                                error={copyErrors.classroomId}
+                                options={[
+                                    { value: '', label: '-- Selecciona un aula --' },
+                                    ...allClassrooms.map(classroom => ({
+                                        value: classroom.id,
+                                        label: `${classroom.name} - ${classroom.grade}° ${classroom.section}`
+                                    }))
+                                ]}
+                            />
 
                             {/* Fecha para la copia */}
-                            <div>
-                                <label htmlFor="copyDate" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                    Fecha de la Nueva Evaluación
-                                </label>
-                                <input
-                                    id="copyDate"
-                                    type="date"
-                                    value={copyFormData.date}
-                                    min={today}
-                                    onChange={(e) => handleCopyInputChange('date', e.target.value)}
-                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${copyErrors.date ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                />
-                                {copyErrors.date && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {copyErrors.date}
-                                    </p>
-                                )}
-                            </div>
+                            <Inputs
+                                label="Fecha de la Nueva Evaluación"
+                                id="copyDate"
+                                type="date"
+                                value={copyFormData.date}
+                                min={today}
+                                onChange={(e) => handleCopyInputChange('date', e.target.value)}
+                                error={copyErrors.date}
+                            />
 
                             {/* Botones de acción */}
                             <div className="flex space-x-3 pt-4">
@@ -855,70 +816,38 @@ const GradePage = () => {
                         {/* Formulario de exportación */}
                         <div className="p-6 space-y-5">
                             {/* Tipo de Exportación */}
-                            <div>
-                                <label htmlFor="exportType" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                    Tipo de Reporte
-                                </label>
-                                <select
-                                    id="exportType"
-                                    value={exportType}
-                                    onChange={(e) => handleExportInputChange('exportType', e.target.value)}
-                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${exportErrors.exportType ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                >
-                                    <option value="">-- Seleccione una opción --</option>
-                                    <option value="criterios">Por criterios</option>
-                                    <option value="participacion">Por participación</option>
-                                </select>
-                                {exportErrors.exportType && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {exportErrors.exportType}
-                                    </p>
-                                )}
-                            </div>
+                            <Select
+                                label="Tipo de Reporte"
+                                id="exportType"
+                                value={exportType}
+                                onChange={(e) => handleExportInputChange('exportType', e.target.value)}
+                                error={exportErrors.exportType}
+                                options={[
+                                    { value: '', label: '-- Seleccione una opción --' },
+                                    { value: 'criterios', label: 'Por criterios' },
+                                    { value: 'participacion', label: 'Por participación' }
+                                ]}
+                            />
 
                             {/* Fecha de Inicio */}
-                            <div>
-                                <label htmlFor="exportStartDate" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                    Fecha de Inicio
-                                </label>
-                                <input
-                                    id="exportStartDate"
-                                    type="date"
-                                    value={exportStartDate}
-                                    onChange={(e) => handleExportInputChange('exportStartDate', e.target.value)}
-                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${exportErrors.exportStartDate ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                />
-                                {exportErrors.exportStartDate && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {exportErrors.exportStartDate}
-                                    </p>
-                                )}
-                            </div>
+                            <Inputs
+                                label="Fecha de Inicio"
+                                id="exportStartDate"
+                                type="date"
+                                value={exportStartDate}
+                                onChange={(e) => handleExportInputChange('exportStartDate', e.target.value)}
+                                error={exportErrors.exportStartDate}
+                            />
 
                             {/* Fecha de Fin */}
-                            <div>
-                                <label htmlFor="exportEndDate" className="block text-sm font-semibold text-neutral-700 mb-2">
-                                    Fecha de Fin
-                                </label>
-                                <input
-                                    id="exportEndDate"
-                                    type="date"
-                                    value={exportEndDate}
-                                    onChange={(e) => handleExportInputChange('exportEndDate', e.target.value)}
-                                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${exportErrors.exportEndDate ? 'border-error-300 bg-error-50' : 'border-neutral-200 hover:border-neutral-300'
-                                        }`}
-                                />
-                                {exportErrors.exportEndDate && (
-                                    <p className="text-error-600 text-sm mt-2 flex items-center">
-                                        <span className="w-1 h-1 bg-error-600 rounded-full mr-2"></span>
-                                        {exportErrors.exportEndDate}
-                                    </p>
-                                )}
-                            </div>
+                            <Inputs
+                                label="Fecha de Fin"
+                                id="exportEndDate"
+                                type="date"
+                                value={exportEndDate}
+                                onChange={(e) => handleExportInputChange('exportEndDate', e.target.value)}
+                                error={exportErrors.exportEndDate}
+                            />
 
                             {/* Botones de acción */}
                             <div className="flex space-x-3 pt-4">

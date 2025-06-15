@@ -10,6 +10,7 @@ import type { Classroom, Student } from '../types/types';
 import ModalAlert from '../components/ModalAlert';
 import Inputs from '../components/Inputs'; // Import Inputs component
 import Select from '../components/Select'; // Import Select component
+import Button from '../components/Button'; // Import Button component
 import { Trash2, PlusCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -263,13 +264,14 @@ const StudentsPage = () => {
                         </div>
                     </div>
                     <div className="">
-                        <button
+                        <Button
                             onClick={() => setIsImportModalOpen(true)}
-                            className=" bg-gradient-to-r from-accent-600 to-accent-700 hover:from-accent-700 hover:to-accent-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl focus:outline-none z-40"
+                            variant="accent"
+                            className="p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl focus:outline-none z-40"
                             aria-label="Importar estudiantes"
                         >
                             <Upload className="h-5 w-5 sm:h-6 sm:w-6" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
@@ -303,20 +305,21 @@ const StudentsPage = () => {
                             }
                         </p>
                         <div className="flex justify-center space-x-4 mt-4">
-                            <button
+                            <Button
                                 onClick={handleDownloadTemplate}
-                                className="inline-flex items-center px-4 py-2 bg-info-600 hover:bg-info-700 text-white rounded-lg transition-colors duration-200 text-sm"
+                                variant="info"
+                                className="inline-flex items-center text-sm"
                             >
                                 <Download className="h-4 w-4 mr-2" />
                                 Descargar Plantilla
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 onClick={() => setIsRegisterModalOpen(true)}
-                                className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200 text-sm"
+                                className="inline-flex items-center text-sm"
                             >
                                 <PlusCircle className="h-4 w-4 mr-2" />
                                 Registrar Estudiante
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 ) : (
@@ -369,12 +372,13 @@ const StudentsPage = () => {
                 {sortedAndFilteredStudents.length > 0 && (
                     <div className="flex justify-center">
                         <div className="p-2 border-neutral-200 text-center mt-4">
-                            <button
+                            <Button
                                 onClick={() => setIsCopyModalOpen(true)}
-                                className="flex items-center justify-center space-x-2 bg-info-600 hover:bg-info-700 text-white px-5 py-3 rounded-xl transition-colors duration-200 text-base font-medium shadow-sm hover:shadow-md"
+                                variant="info"
+                                className="flex items-center justify-center space-x-2 px-5 py-3 rounded-xl transition-colors duration-200 text-base font-medium shadow-sm hover:shadow-md"
                             >
                                 <span>Copiar Estudiantes a otra Aula</span>
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 )}
@@ -382,13 +386,13 @@ const StudentsPage = () => {
 
 
             {/* Floating Action Button (FAB) para Registrar Estudiante */}
-            <button
+            <Button
                 onClick={() => setIsRegisterModalOpen(true)}
-                className="fixed bottom-6 right-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95 z-40"
+                className="fixed bottom-6 right-6 p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95 z-40"
                 aria-label="Registrar nuevo estudiante"
             >
                 <PlusCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
+            </Button>
 
             {/* Floating Action Button (FAB) para Importar
             <button
@@ -503,32 +507,34 @@ const StudentsPage = () => {
 
                             {/* Botones del modal */}
                             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100">
-                                <button
+                                <Button
                                     type="button"
                                     onClick={closeImportModal}
-                                    className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-200 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
+                                    variant="neutral"
+                                    className="w-full sm:flex-1 text-sm"
                                     disabled={isProcessing}
                                 >
                                     Cancelar
-                                </button>
+                                </Button>
                                 {selectedFile && (
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={() => setSelectedFile(null)}
-                                        className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-300 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
+                                        variant="neutral"
+                                        className="w-full sm:flex-1 text-sm"
                                         disabled={isProcessing}
                                     >
                                         Cambiar archivo
-                                    </button>
+                                    </Button>
                                 )}
-                                <button
+                                <Button
                                     type="button"
                                     onClick={selectedFile ? handleImportStudents : handleDownloadTemplate}
-                                    className="w-full sm:flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                    className="w-full sm:flex-1 text-sm"
                                     disabled={isProcessing}
                                 >
                                     {selectedFile ? 'Importar Estudiantes' : 'Descargar Plantilla'}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -595,22 +601,23 @@ const StudentsPage = () => {
 
                             {/* Botones de acción */}
                             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100">
-                                <button
+                                <Button
                                     type="button"
                                     onClick={closeCopyModal}
-                                    className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
+                                    variant="neutral"
+                                    className="w-full sm:flex-1 text-sm"
                                     disabled={isProcessing}
                                 >
                                     Cancelar
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
                                     onClick={handleCopyStudents}
-                                    className="w-full sm:flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                    className="w-full sm:flex-1 text-sm"
                                     disabled={isProcessing || !copyToClassroomId}
                                 >
                                     Copiar Estudiantes
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -681,22 +688,23 @@ const StudentsPage = () => {
 
                             {/* Botones de acción */}
                             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100">
-                                <button
+                                <Button
                                     type="button"
                                     onClick={closeRegisterModal}
-                                    className="w-full sm:flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium text-sm"
+                                    variant="neutral"
+                                    className="w-full sm:flex-1 text-sm"
                                     disabled={isProcessing}
                                 >
                                     Cancelar
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
                                     onClick={handleRegisterStudent}
-                                    className="w-full sm:flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                    className="w-full sm:flex-1 text-sm"
                                     disabled={isProcessing || !newStudentName.trim()}
                                 >
                                     Registrar Estudiante
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

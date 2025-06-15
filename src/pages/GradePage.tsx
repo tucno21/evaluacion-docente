@@ -9,6 +9,7 @@ import { getClassroomById, getAllClassrooms } from '../utils/indexDB'; // Added 
 import ModalAlert from '../components/ModalAlert'; // Import ModalAlert
 import Inputs from '../components/Inputs'; // Import Inputs component
 import Select from '../components/Select'; // Import Select component
+import Button from '../components/Button'; // Import Button component
 import { generateEvaluationExcel, generateParticipationExcel, generateCriteriaExcel } from '../utils/excel'; // Import the new excel functions
 
 const GradePage = () => {
@@ -426,26 +427,27 @@ const GradePage = () => {
             <div className="flex gap-4 justify-center">
                 {/* Botón Estudiantes - Secundario */}
                 <div className="flex justify-center">
-                    <button
+                    <Button
                         onClick={goToStudents}
-                        className="flex items-center space-x-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-4 py-2 rounded-lg transition-colors duration-200 text-sm"
+                        variant="neutral"
                     >
                         <Users className="h-4 w-4" />
                         <span>Ver Estudiantes</span>
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Botón para exportar a Excel (nuevo) */}
                 <div className="flex justify-center">
-                    <button
+                    <Button
                         onClick={() => setIsExportModalOpen(true)}
-                        className={`flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 text-sm shadow-md ${Object.keys(groupedMatrices).length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        variant="green"
+                        className={`${Object.keys(groupedMatrices).length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                         aria-label="Exportar a Excel"
                         disabled={Object.keys(groupedMatrices).length === 0}
                     >
                         <FileDown className="h-4 w-4" />
                         <span>Exportar a Excel</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -568,13 +570,13 @@ const GradePage = () => {
             )}
 
             {/* Botón flotante para nueva matriz - Muy importante */}
-            <button
+            <Button
                 onClick={() => setIsModalOpen(true)}
-                className="fixed bottom-6 right-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95"
+                className="fixed bottom-6 right-6 p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95"
                 aria-label="Nueva matriz de evaluación"
             >
                 <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
+            </Button>
 
             {/* Modal para crear/editar matriz */}
             {isModalOpen && (
@@ -665,14 +667,15 @@ const GradePage = () => {
                                 </div>
 
                                 {criteria.length < 5 && (
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={addCriteria}
-                                        className="mt-3 w-full px-3 py-2 md:px-4 md:py-3 border-2 border-dashed border-neutral-300 text-neutral-600 hover:border-accent-300 hover:text-accent-600 hover:bg-accent-50 rounded-xl transition-all flex items-center justify-center space-x-2"
+                                        variant="outline"
+                                        className="mt-3"
                                     >
                                         <Plus className="h-4 w-4" />
                                         <span>Agregar criterio</span>
-                                    </button>
+                                    </Button>
                                 )}
 
                                 {errors.criteria && (
@@ -685,20 +688,21 @@ const GradePage = () => {
 
                             {/* Botones */}
                             <div className="flex space-x-3 pt-4">
-                                <button
+                                <Button
                                     type="button"
                                     onClick={closeModal}
-                                    className="flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium"
+                                    variant="neutral"
+                                    className="flex-1"
                                 >
                                     Cancelar
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
                                     onClick={handleSubmit}
-                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg"
+                                    className="flex-1"
                                 >
                                     {editingMatrixId ? 'Guardar' : 'Crear'}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -759,20 +763,21 @@ const GradePage = () => {
 
                             {/* Botones de acción */}
                             <div className="flex space-x-3 pt-4">
-                                <button
+                                <Button
                                     type="button"
                                     onClick={closeCopyModal}
-                                    className="flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium"
+                                    variant="neutral"
+                                    className="flex-1"
                                 >
                                     Cancelar
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
                                     onClick={handleCopySubmit}
-                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg"
+                                    className="flex-1"
                                 >
                                     Copiar
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -851,21 +856,23 @@ const GradePage = () => {
 
                             {/* Botones de acción */}
                             <div className="flex space-x-3 pt-4">
-                                <button
+                                <Button
                                     type="button"
                                     onClick={closeExportModal}
-                                    className="flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium"
+                                    variant="neutral"
+                                    className="flex-1"
                                 >
                                     Cancelar
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
                                     onClick={handleExportExcel}
-                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg"
+                                    variant="green"
+                                    className="flex-1"
                                     disabled={isDownloadingExcel}
                                 >
                                     {isDownloadingExcel ? 'Generando...' : 'Generar Excel'}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

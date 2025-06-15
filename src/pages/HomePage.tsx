@@ -5,6 +5,7 @@ import { useAppStore } from '../store/useAppStore';
 import type { Classroom } from '../types/types';
 import ModalAlert from '../components/ModalAlert';
 import Inputs from '../components/Inputs'; // Import Inputs component
+import Button from '../components/Button';
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -204,13 +205,20 @@ const HomePage = () => {
             )}
 
             {/* Botón flotante optimizado para móvil */}
-            <button
+            <Button
+                onClick={() => setIsModalOpen(true)}
+                className="fixed bottom-6 right-6 p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95"
+                aria-label="Crear nueva aula"
+            >
+                <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
+            </Button>
+            {/* <button
                 onClick={() => setIsModalOpen(true)}
                 className="fixed bottom-6 right-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95"
                 aria-label="Crear nueva aula"
             >
                 <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
+            </button> */}
 
             {/* Modal mejorado */}
             {isModalOpen && (
@@ -282,20 +290,21 @@ const HomePage = () => {
 
                             {/* Botones */}
                             <div className="flex space-x-3 pt-4">
-                                <button
+                                <Button
                                     type="button"
                                     onClick={closeModal}
-                                    className="flex-1 px-4 py-3 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition-colors font-medium"
+                                    variant="neutral"
+                                    className="flex-1"
                                 >
                                     Cancelar
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
                                     onClick={handleSubmit}
-                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl transition-all font-medium shadow-md hover:shadow-lg"
+                                    className="flex-1"
                                 >
                                     Crear Aula
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

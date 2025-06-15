@@ -485,80 +485,105 @@ const GradePage = () => {
                                     {group.matrices.map((matrix) => (
                                         <div
                                             key={matrix.id}
-                                            className="bg-white rounded-xl border border-neutral-200 hover:border-accent-300 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.99]"
-                                            onClick={() => goToEvaluation(matrix.id)}
+                                            className="bg-white rounded-xl border border-neutral-200 hover:border-accent-300 transition-all duration-200 shadow-sm hover:shadow-md"
                                         >
-                                            <div className="p-4">
-                                                <div className="flex items-center justify-between">
-                                                    {/* Contenido principal */}
-                                                    <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                                        {/* Icono */}
-                                                        <div className="bg-gradient-to-br from-accent-100 to-accent-200 p-2.5 rounded-lg">
-                                                            <ClipboardList className="h-5 w-5 text-accent-600" />
-                                                        </div>
+                                            {/* Área clickeable principal */}
+                                            <div
+                                                className="px-4 pt-3 cursor-pointer active:scale-[0.99] transition-transform"
+                                                onClick={() => goToEvaluation(matrix.id)}
+                                            >
+                                                <div className="flex items-center space-x-3">
+                                                    {/* Icono */}
+                                                    <div className="bg-gradient-to-br from-accent-100 to-accent-200 p-2 rounded-lg shrink-0">
+                                                        <ClipboardList className="h-6 w-6 text-accent-600" />
+                                                    </div>
 
-                                                        {/* Información */}
-                                                        <div className="flex-1 min-w-0">
-                                                            <h3 className="font-semibold text-neutral-900 truncate text-base sm:text-lg">
-                                                                {matrix.name}
-                                                            </h3>
-                                                            <div className="flex items-center space-x-4 mt-1">
-                                                                <div className="flex items-center text-xs text-neutral-500">
-                                                                    <Calendar className="h-3 w-3 mr-1" />
-                                                                    <span className="hidden sm:inline">
-                                                                        {new Date(matrix.date).toLocaleDateString('es', {
-                                                                            weekday: 'short',
-                                                                            day: 'numeric',
-                                                                            month: 'short'
-                                                                        })}
-                                                                    </span>
-                                                                    <span className="sm:hidden">
-                                                                        {new Date(matrix.date).toLocaleDateString('es', {
-                                                                            day: '2-digit',
-                                                                            month: 'short'
-                                                                        })}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center text-xs text-neutral-500">
-                                                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                                                    <span>{matrix.criteria.length} criterios</span>
-                                                                </div>
+                                                    {/* Información */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-semibold text-neutral-900 truncate text-base sm:text-lg">
+                                                            {matrix.name}
+                                                        </h3>
+                                                        <div className="flex items-center space-x-4">
+                                                            <div className="flex items-center text-xs text-neutral-500">
+                                                                <Calendar className="h-3 w-3 mr-1 shrink-0" />
+                                                                <span className="hidden sm:inline">
+                                                                    {new Date(matrix.date).toLocaleDateString('es', {
+                                                                        weekday: 'short',
+                                                                        day: 'numeric',
+                                                                        month: 'short'
+                                                                    })}
+                                                                </span>
+                                                                <span className="sm:hidden">
+                                                                    {new Date(matrix.date).toLocaleDateString('es', {
+                                                                        day: '2-digit',
+                                                                        month: 'short'
+                                                                    })}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center text-xs text-neutral-500">
+                                                                <CheckCircle className="h-3 w-3 mr-1 shrink-0" />
+                                                                <span>{matrix.criteria.length} criterios</span>
                                                             </div>
                                                         </div>
                                                     </div>
+                                                </div>
+                                            </div>
 
-                                                    {/* Acciones */}
-                                                    <div className="flex items-center space-x-1">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleSingleMatrixDownloadExcel(matrix); }}
-                                                            className="p-2 text-neutral-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                                                            aria-label="Descargar Excel"
-                                                            disabled={isDownloadingExcel}
-                                                        >
-                                                            <FileDown className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleCopyMatrix(matrix); }}
-                                                            className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200"
-                                                            aria-label="Copiar matriz"
-                                                        >
-                                                            <Copy className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleEditMatrix(matrix.id); }}
-                                                            className="p-2 text-neutral-400 hover:text-accent-600 hover:bg-accent-50 rounded-lg transition-all duration-200"
-                                                            aria-label="Editar matriz"
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDeleteMatrix(matrix.id); }}
-                                                            className="p-2 text-neutral-400 hover:text-error-600 hover:bg-error-50 rounded-lg transition-all duration-200"
-                                                            aria-label="Eliminar matriz"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
+                                            {/* Separador visual sutil */}
+                                            <div className="h-px bg-gradient-to-r from-transparent via-neutral-100 to-transparent mx-4"></div>
+
+                                            {/* Barra de acciones optimizada */}
+                                            <div className="">
+                                                <div className="flex items-center justify-center space-x-1 sm:space-x-2 ">
+                                                    {/* Botón Descargar */}
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleSingleMatrixDownloadExcel(matrix); }}
+                                                        className="flex-1 flex flex-col sm:flex-row items-center justify-center sm:space-x-2 py-1 px-2 sm:p-2 text-neutral-500 hover:text-green-600 hover:bg-green-50 transition-all duration-200 rounded-bl-xl group active:scale-95"
+                                                        aria-label="Descargar Excel"
+                                                        disabled={isDownloadingExcel}
+                                                    >
+                                                        <FileDown className="h-4.5 w-4.5 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform shrink-0" />
+                                                        <span className="text-xs sm:text-sm font-medium hidden sm:block">Excel</span>
+                                                    </button>
+
+                                                    {/* Separador vertical */}
+                                                    <div className="w-px h-8 bg-neutral-200"></div>
+
+                                                    {/* Botón Copiar */}
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleCopyMatrix(matrix); }}
+                                                        className="flex-1 flex flex-col sm:flex-row items-center justify-center sm:space-x-2 py-1 px-2 sm:p-2 text-neutral-500 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 group active:scale-95"
+                                                        aria-label="Copiar matriz"
+                                                    >
+                                                        <Copy className="h-4.5 w-4.5 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform shrink-0" />
+                                                        <span className="text-xs sm:text-sm font-medium hidden sm:block">Copiar</span>
+                                                    </button>
+
+                                                    {/* Separador vertical */}
+                                                    <div className="w-px h-8 bg-neutral-200"></div>
+
+                                                    {/* Botón Editar */}
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleEditMatrix(matrix.id); }}
+                                                        className="flex-1 flex flex-col sm:flex-row items-center justify-center sm:space-x-2 py-1 px-2 sm:p-2 text-neutral-500 hover:text-accent-600 hover:bg-accent-50 transition-all duration-200 group active:scale-95"
+                                                        aria-label="Editar matriz"
+                                                    >
+                                                        <Pencil className="h-4.5 w-4.5 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform shrink-0" />
+                                                        <span className="text-xs sm:text-sm font-medium hidden sm:block">Editar</span>
+                                                    </button>
+
+                                                    {/* Separador vertical */}
+                                                    <div className="w-px h-8 bg-neutral-200"></div>
+
+                                                    {/* Botón Eliminar */}
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleDeleteMatrix(matrix.id); }}
+                                                        className="flex-1 flex flex-col sm:flex-row items-center justify-center sm:space-x-2 py-1 px-2 sm:p-2 text-neutral-500 hover:text-error-600 hover:bg-error-50 transition-all duration-200 rounded-br-xl group active:scale-95"
+                                                        aria-label="Eliminar matriz"
+                                                    >
+                                                        <Trash2 className="h-4.5 w-4.5 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform shrink-0" />
+                                                        <span className="text-xs sm:text-sm font-medium hidden sm:block">Eliminar</span>
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>

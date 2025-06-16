@@ -1,6 +1,6 @@
 {
-    "name": "EvalDocente",
-    "short_name": "EvalDocente",
+    "name": "Evalúa Docente",
+    "short_name": "EvaluaDocente",
     "description": "Aplicación para la evaluación docente",
     "start_url": "/",
     "display": "standalone",

@@ -10,6 +10,7 @@ import ModalAlert from '../components/ModalAlert'; // Import ModalAlert
 import Inputs from '../components/Inputs'; // Import Inputs component
 import Select from '../components/Select'; // Import Select component
 import Button from '../components/Button'; // Import Button component
+import LoadingSpinner from '../components/LoadingSpinner'; // Import LoadingSpinner component
 import { generateEvaluationExcel, generateParticipationExcel, generateCriteriaExcel } from '../utils/excel'; // Import the new excel functions
 
 const GradePage = () => {
@@ -49,6 +50,7 @@ const GradePage = () => {
     const [copyErrors, setCopyErrors] = useState<Record<string, string>>({});
     const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
     const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
+    const [downloadMessage, setDownloadMessage] = useState(''); // New state for download message
     const [expandedMatrixId, setExpandedMatrixId] = useState<string | null>(null); // New state for expanded matrix
 
     // New states for Excel export modal
@@ -317,6 +319,7 @@ const GradePage = () => {
 
     const handleSingleMatrixDownloadExcel = async (matrix: EvaluationMatrix) => {
         setIsDownloadingExcel(true);
+        setDownloadMessage('Generando Excel de Evaluación...');
         try {
             const fetchedStudents = await loadStudentsByClassroom(matrix.classroomId);
             const fetchedStudentEvaluations = await loadEvaluationsByMatrix(matrix.id);
@@ -343,6 +346,7 @@ const GradePage = () => {
             alert('Hubo un error al generar el archivo Excel.');
         } finally {
             setIsDownloadingExcel(false);
+            setDownloadMessage('');
         }
     };
 
@@ -350,6 +354,7 @@ const GradePage = () => {
         if (!validateExportForm()) return;
 
         setIsDownloadingExcel(true);
+        setDownloadMessage(`Generando Excel de ${exportType === 'criterios' ? 'Criterios' : 'Participación'}...`);
         try {
             const allStudents = await loadStudentsByClassroom(gradeId!); // Get students for current classroom
             const allMatrices = await getAllEvaluationMatrices(); // Get all matrices
@@ -396,6 +401,7 @@ const GradePage = () => {
             alert('Hubo un error al generar el archivo Excel.');
         } finally {
             setIsDownloadingExcel(false);
+            setDownloadMessage('');
         }
     };
 
@@ -914,13 +920,16 @@ const GradePage = () => {
                                     className="flex-1"
                                     disabled={isDownloadingExcel}
                                 >
-                                    {isDownloadingExcel ? 'Generando...' : 'Generar Excel'}
+                                    Generar Excel
                                 </Button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Loader global para descargas de Excel */}
+            <LoadingSpinner isOpen={isDownloadingExcel} message={downloadMessage} size="lg" color="text-green-500" />
         </div>
     );
 };

@@ -12,7 +12,7 @@ import Inputs from '../components/Inputs'; // Import Inputs component
 import Select from '../components/Select'; // Import Select component
 import Button from '../components/Button'; // Import Button component
 import Toast from '../components/Toast'; // Import Toast component
-import { Trash2, PlusCircle } from 'lucide-react';
+import { Trash2, UserPlus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 const StudentsPage = () => {
@@ -323,7 +323,7 @@ const StudentsPage = () => {
                                 onClick={() => setIsRegisterModalOpen(true)}
                                 className="inline-flex items-center text-sm"
                             >
-                                <PlusCircle className="h-4 w-4 mr-2" />
+                                <UserPlus className="h-4 w-4 mr-2" />
                                 Registrar Estudiante
                             </Button>
                         </div>
@@ -392,13 +392,22 @@ const StudentsPage = () => {
 
 
             {/* Floating Action Button (FAB) para Registrar Estudiante */}
-            <Button
+            {/* <Button
                 onClick={() => setIsRegisterModalOpen(true)}
                 className="fixed bottom-6 right-6 p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95 z-40"
                 aria-label="Registrar nuevo estudiante"
             >
                 <PlusCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-            </Button>
+            </Button> */}
+
+            {/* Botón flotante para nueva matriz - Muy importante */}
+            <button
+                onClick={() => setIsRegisterModalOpen(true)}
+                className="fixed bottom-6 right-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95"
+                aria-label="Crear nueva aula"
+            >
+                <UserPlus className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
 
             {/* Floating Action Button (FAB) para Importar
             <button

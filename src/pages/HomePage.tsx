@@ -205,20 +205,13 @@ const HomePage = () => {
             )}
 
             {/* Botón flotante optimizado para móvil */}
-            <Button
-                onClick={() => setIsModalOpen(true)}
-                className="fixed bottom-6 right-6 p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95"
-                aria-label="Crear nueva aula"
-            >
-                <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
-            </Button>
-            {/* <button
+            <button
                 onClick={() => setIsModalOpen(true)}
                 className="fixed bottom-6 right-6 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-200 active:scale-95"
                 aria-label="Crear nueva aula"
             >
                 <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button> */}
+            </button>
 
             {/* Modal mejorado */}
             {isModalOpen && (

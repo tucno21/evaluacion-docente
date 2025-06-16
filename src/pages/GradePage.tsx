@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, FileDown, Eye, EyeOff } from 'lucide-react'; // Added Copy, FileDown and EyeOff icon
+import { Users, Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, FileDown } from 'lucide-react'; // Added Copy, FileDown and EyeOff icon
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
@@ -403,7 +403,7 @@ const GradePage = () => {
         navigate(`/grade/${gradeId}/matrix/${matrixId}/evaluate`);
     };
 
-    const today = new Date().toISOString().split('T')[0];
+    // const today = new Date().toISOString().split('T')[0];
     const { setHeaderTitle } = useHeaderStore();
 
     useEffect(() => {
@@ -664,7 +664,7 @@ const GradePage = () => {
                                 id="evaluationDate"
                                 type="date"
                                 value={formData.date}
-                                min={today}
+                                // min={today}
                                 onChange={(e) => handleInputChange('date', e.target.value)}
                                 error={errors.date}
                                 inputClassName="focus:ring-primary-500"
@@ -799,7 +799,7 @@ const GradePage = () => {
                                 id="copyDate"
                                 type="date"
                                 value={copyFormData.date}
-                                min={today}
+                                // min={today}
                                 onChange={(e) => handleCopyInputChange('date', e.target.value)}
                                 error={copyErrors.date}
                             />

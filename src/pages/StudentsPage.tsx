@@ -11,6 +11,7 @@ import ModalAlert from '../components/ModalAlert';
 import Inputs from '../components/Inputs'; // Import Inputs component
 import Select from '../components/Select'; // Import Select component
 import Button from '../components/Button'; // Import Button component
+import Toast from '../components/Toast'; // Import Toast component
 import { Trash2, PlusCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,6 +31,9 @@ const StudentsPage = () => {
     const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
     const [copyErrors, setCopyErrors] = useState<Record<string, string>>({});
     const { setHeaderTitle } = useHeaderStore();
+
+    // State for Toast notifications
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
     // State for delete modal
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -74,7 +78,7 @@ const StudentsPage = () => {
         if (file && file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
             setSelectedFile(file);
         } else {
-            alert('Por favor selecciona un archivo Excel válido (.xlsx)');
+            setToast({ message: 'Por favor selecciona un archivo Excel válido (.xlsx)', type: 'error' });
         }
     };
 
@@ -107,7 +111,7 @@ const StudentsPage = () => {
 
     const handleImportStudents = async () => {
         if (!selectedFile || !classroomId) {
-            alert('No se puede importar estudiantes sin un ID de aula válido.');
+            setToast({ message: 'No se puede importar estudiantes sin un ID de aula válido.', type: 'error' });
             return;
         }
 
@@ -126,11 +130,11 @@ const StudentsPage = () => {
 
             setIsProcessing(false);
             closeImportModal();
-            // alert(`Se importaron ${studentsToSave.length} estudiantes correctamente`); // Removed alert
+            setToast({ message: `Se importaron ${studentsToSave.length} estudiantes correctamente.`, type: 'success' });
             // No redirection after import, stay on the same view
         } catch (error) {
             console.error('Error al importar estudiantes:', error);
-            alert('Error al importar estudiantes: ' + error);
+            setToast({ message: 'Error al importar estudiantes: ' + error, type: 'error' });
             setIsProcessing(false);
         }
     };
@@ -167,9 +171,10 @@ const StudentsPage = () => {
             setIsProcessing(false);
             closeCopyModal();
             navigate(`/grade/${copyToClassroomId}/students`);
+            setToast({ message: 'Estudiantes copiados correctamente.', type: 'success' });
         } catch (error) {
             console.error('Error al copiar estudiantes:', error);
-            alert('Error al copiar estudiantes: ' + error);
+            setToast({ message: 'Error al copiar estudiantes: ' + error, type: 'error' });
             setIsProcessing(false);
         }
     };
@@ -192,9 +197,10 @@ const StudentsPage = () => {
             try {
                 await removeStudent(studentToDelete.id);
                 closeDeleteModal();
+                setToast({ message: `Estudiante ${studentToDelete.fullName} eliminado correctamente.`, type: 'success' });
             } catch (error) {
                 console.error('Error al eliminar estudiante:', error);
-                alert('Error al eliminar estudiante: ' + error);
+                setToast({ message: 'Error al eliminar estudiante: ' + error, type: 'error' });
             }
         }
     };
@@ -229,10 +235,10 @@ const StudentsPage = () => {
             await addStudent(newStudent);
             setIsProcessing(false);
             closeRegisterModal();
-            alert(`Estudiante ${newStudent.fullName} registrado correctamente.`);
+            setToast({ message: `Estudiante ${newStudent.fullName} registrado correctamente.`, type: 'success' });
         } catch (error) {
             console.error('Error al registrar estudiante:', error);
-            alert('Error al registrar estudiante: ' + error);
+            setToast({ message: 'Error al registrar estudiante: ' + error, type: 'error' });
             setIsProcessing(false);
         }
     };
@@ -709,6 +715,15 @@ const StudentsPage = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Toast Notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
             )}
         </div>
     );

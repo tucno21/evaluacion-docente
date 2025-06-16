@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, FileDown } from 'lucide-react'; // Added Copy and FileDown icon
+import { Users, Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, FileDown, Eye, EyeOff } from 'lucide-react'; // Added Copy, FileDown and EyeOff icon
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
@@ -49,6 +49,7 @@ const GradePage = () => {
     const [copyErrors, setCopyErrors] = useState<Record<string, string>>({});
     const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
     const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
+    const [expandedMatrixId, setExpandedMatrixId] = useState<string | null>(null); // New state for expanded matrix
 
     // New states for Excel export modal
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -470,119 +471,136 @@ const GradePage = () => {
                     {Object.entries(groupedMatrices)
                         .sort(([a], [b]) => b.localeCompare(a))
                         .map(([monthKey, group]) => (
-                            <div key={monthKey} className="space-y-3">
-                                {/* Header del mes */}
-                                <div className="flex items-center space-x-2 px-2">
-                                    <div className="h-px bg-neutral-200 flex-1"></div>
-                                    <span className="text-sm font-medium text-neutral-500 px-3 py-1 bg-neutral-100 rounded-full">
-                                        {group.label}
-                                    </span>
-                                    <div className="h-px bg-neutral-200 flex-1"></div>
+                            <div key={monthKey} className="space-y-4">
+                                {/* Header del mes mejorado */}
+                                <div className="flex items-center space-x-3 px-3">
+                                    <div className="h-px bg-gradient-to-r from-transparent to-neutral-200 flex-1"></div>
+                                    <div className="bg-white border border-neutral-200 px-4 py-2 rounded-full shadow-sm">
+                                        <span className="text-sm font-semibold text-neutral-700">
+                                            {group.label}
+                                        </span>
+                                    </div>
+                                    <div className="h-px bg-gradient-to-l from-transparent to-neutral-200 flex-1"></div>
                                 </div>
 
                                 {/* Matrices del mes */}
-                                <div className="space-y-3">
+                                <div className="space-y-3 px-1">
                                     {group.matrices.map((matrix) => (
                                         <div
                                             key={matrix.id}
-                                            className="bg-white rounded-xl border border-neutral-200 hover:border-accent-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                                            className={`bg-white rounded-2xl border transition-all duration-300 ${expandedMatrixId === matrix.id
+                                                ? 'border-accent-200 shadow-lg shadow-accent-100/50'
+                                                : 'border-neutral-200 hover:border-accent-200 shadow-sm hover:shadow-md'
+                                                }`}
                                         >
-                                            {/* Área clickeable principal */}
-                                            <div
-                                                className="px-4 pt-3 cursor-pointer active:scale-[0.99] transition-transform"
-                                                onClick={() => goToEvaluation(matrix.id)}
-                                            >
-                                                <div className="flex items-center space-x-3">
-                                                    {/* Icono */}
-                                                    <div className="bg-gradient-to-br from-accent-100 to-accent-200 p-2 rounded-lg shrink-0">
-                                                        <ClipboardList className="h-6 w-6 text-accent-600" />
-                                                    </div>
-
-                                                    {/* Información */}
-                                                    <div className="flex-1 min-w-0">
-                                                        <h3 className="font-semibold text-neutral-900 truncate text-base sm:text-lg">
-                                                            {matrix.name}
-                                                        </h3>
-                                                        <div className="flex items-center space-x-4">
-                                                            <div className="flex items-center text-xs text-neutral-500">
-                                                                <Calendar className="h-3 w-3 mr-1 shrink-0" />
-                                                                <span className="hidden sm:inline">
-                                                                    {new Date(matrix.date).toLocaleDateString('es', {
-                                                                        weekday: 'short',
-                                                                        day: 'numeric',
-                                                                        month: 'short'
-                                                                    })}
-                                                                </span>
-                                                                <span className="sm:hidden">
-                                                                    {new Date(matrix.date).toLocaleDateString('es', {
-                                                                        day: '2-digit',
-                                                                        month: 'short'
-                                                                    })}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center text-xs text-neutral-500">
-                                                                <CheckCircle className="h-3 w-3 mr-1 shrink-0" />
-                                                                <span>{matrix.criteria.length} criterios</span>
+                                            {/* Área clickeable principal mejorada */}
+                                            <div className="px-2 py-4 cursor-pointer " onClick={() => goToEvaluation(matrix.id)} >
+                                                <div className="flex flex-1 justify-between items-center">
+                                                    <div className="flex gap-x-3 items-center">
+                                                        {/* Icono mejorado */}
+                                                        <div className="bg-gradient-to-br from-accent-100 via-accent-200 to-accent-300 p-3 rounded-2xl shrink-0 shadow-sm">
+                                                            <ClipboardList className="h-7 w-6 text-accent-700" />
+                                                        </div>
+                                                        <div className="">
+                                                            <h3 className="font-bold text-neutral-900 text-base sm:text-lg leading-tight">
+                                                                {matrix.name}
+                                                            </h3>
+                                                            {/* Metadatos con mejor espaciado */}
+                                                            <div className="flex gap-x-3 text-xs text-neutral-600">
+                                                                <div className="flex items-center bg-neutral-50 px-2 py-1 rounded-lg">
+                                                                    <Calendar className="h-3 w-3 mr-1.5 shrink-0 text-neutral-500" />
+                                                                    <span className="font-medium">
+                                                                        {new Date(matrix.date).toLocaleDateString('es', {
+                                                                            day: '2-digit',
+                                                                            month: 'short',
+                                                                            ...(window.innerWidth > 640 && { weekday: 'short' })
+                                                                        })}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center bg-neutral-50 px-2 py-1 rounded-lg">
+                                                                    <CheckCircle className="h-3 w-3 mr-1.5 shrink-0 text-neutral-500" />
+                                                                    <span className="font-medium">{matrix.criteria.length} criterios</span>
+                                                                </div>
                                                             </div>
                                                         </div>
+                                                    </div>
+
+                                                    {/* Botón toggle mejorado */}
+                                                    <div className=" min-w-0">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setExpandedMatrixId(prevId => (prevId === matrix.id ? null : matrix.id));
+                                                            }}
+                                                            className={`p-2 rounded-full transition-all duration-200 shrink-0 ${expandedMatrixId === matrix.id
+                                                                ? 'bg-accent-100 text-accent-600 rotate-180'
+                                                                : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                                                                }`}
+                                                            aria-label={expandedMatrixId === matrix.id ? "Contraer acciones" : "Expandir acciones"}
+                                                        >
+                                                            <svg className="h-5 w-5 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Separador visual sutil */}
-                                            <div className="h-px bg-gradient-to-r from-transparent via-neutral-100 to-transparent mx-4"></div>
+                                            {/* Barra de acciones completamente rediseñada para móvil */}
+                                            <div className={`overflow-hidden transition-all duration-300 ease-out ${expandedMatrixId === matrix.id ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+                                                }`}>
+                                                {/* Separador sutil */}
+                                                <div className="h-px bg-gradient-to-r from-transparent via-neutral-400 to-transparent mx-4"></div>
 
-                                            {/* Barra de acciones optimizada */}
-                                            <div className="">
-                                                <div className="flex items-center justify-center space-x-1 sm:space-x-2 ">
+                                                {/* Grid de botones optimizado para mobile */}
+                                                <div className="grid grid-cols-4 gap-0">
                                                     {/* Botón Descargar */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleSingleMatrixDownloadExcel(matrix); }}
-                                                        className="flex-1 flex flex-col sm:flex-row items-center justify-center sm:space-x-2 py-1 px-2 sm:p-2 text-neutral-500 hover:text-green-600 hover:bg-green-50 transition-all duration-200 rounded-bl-xl group active:scale-95"
+                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 active:scale-95 active:bg-green-100 first:rounded-bl-2xl"
                                                         aria-label="Descargar Excel"
                                                         disabled={isDownloadingExcel}
                                                     >
-                                                        <FileDown className="h-4.5 w-4.5 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform shrink-0" />
-                                                        <span className="text-xs sm:text-sm font-medium hidden sm:block">Excel</span>
+                                                        <div className="bg-green-100 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-green-200 transition-colors">
+                                                            <FileDown className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
+                                                        </div>
+                                                        <span className="text-[0.65rem] md:text-xs font-medium">Excel</span>
                                                     </button>
-
-                                                    {/* Separador vertical */}
-                                                    <div className="w-px h-8 bg-neutral-200"></div>
 
                                                     {/* Botón Copiar */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleCopyMatrix(matrix); }}
-                                                        className="flex-1 flex flex-col sm:flex-row items-center justify-center sm:space-x-2 py-1 px-2 sm:p-2 text-neutral-500 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 group active:scale-95"
+                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 active:scale-95 active:bg-primary-100"
                                                         aria-label="Copiar matriz"
                                                     >
-                                                        <Copy className="h-4.5 w-4.5 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform shrink-0" />
-                                                        <span className="text-xs sm:text-sm font-medium hidden sm:block">Copiar</span>
+                                                        <div className="bg-primary-100 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-primary-200 transition-colors">
+                                                            <Copy className="h-4 w-4 md:h-5 md:w-5 text-primary-600" />
+                                                        </div>
+                                                        <span className="text-[0.65rem] md:text-xs font-medium">Copiar</span>
                                                     </button>
-
-                                                    {/* Separador vertical */}
-                                                    <div className="w-px h-8 bg-neutral-200"></div>
 
                                                     {/* Botón Editar */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleEditMatrix(matrix.id); }}
-                                                        className="flex-1 flex flex-col sm:flex-row items-center justify-center sm:space-x-2 py-1 px-2 sm:p-2 text-neutral-500 hover:text-accent-600 hover:bg-accent-50 transition-all duration-200 group active:scale-95"
+                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 hover:text-accent-600 hover:bg-accent-50 transition-all duration-200 active:scale-95 active:bg-accent-100"
                                                         aria-label="Editar matriz"
                                                     >
-                                                        <Pencil className="h-4.5 w-4.5 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform shrink-0" />
-                                                        <span className="text-xs sm:text-sm font-medium hidden sm:block">Editar</span>
+                                                        <div className="bg-accent-100 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-accent-200 transition-colors">
+                                                            <Pencil className="h-4 w-4 md:h-5 md:w-5 text-accent-600" />
+                                                        </div>
+                                                        <span className="text-[0.65rem] md:text-xs font-medium">Editar</span>
                                                     </button>
-
-                                                    {/* Separador vertical */}
-                                                    <div className="w-px h-8 bg-neutral-200"></div>
 
                                                     {/* Botón Eliminar */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleDeleteMatrix(matrix.id); }}
-                                                        className="flex-1 flex flex-col sm:flex-row items-center justify-center sm:space-x-2 py-1 px-2 sm:p-2 text-neutral-500 hover:text-error-600 hover:bg-error-50 transition-all duration-200 rounded-br-xl group active:scale-95"
+                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 hover:text-error-600 hover:bg-error-50 transition-all duration-200 active:scale-95 active:bg-error-100 last:rounded-br-2xl"
                                                         aria-label="Eliminar matriz"
                                                     >
-                                                        <Trash2 className="h-4.5 w-4.5 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform shrink-0" />
-                                                        <span className="text-xs sm:text-sm font-medium hidden sm:block">Eliminar</span>
+                                                        <div className="bg-error-100 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-error-200 transition-colors">
+                                                            <Trash2 className="h-4 w-4 md:h-5 md:w-5 text-error-600" />
+                                                        </div>
+                                                        <span className="text-[0.65rem] md:text-xs font-medium">Eliminar</span>
                                                     </button>
                                                 </div>
                                             </div>

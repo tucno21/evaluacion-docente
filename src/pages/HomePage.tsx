@@ -42,17 +42,6 @@ const HomePage = () => {
             newErrors.section = 'La sección debe ser una letra (A-Z)';
         }
 
-        const exists = classrooms.some(
-            classroom =>
-                classroom.grade === formData.grade.trim() &&
-                classroom.section.toLowerCase() === formData.section.trim().toLowerCase()
-        );
-
-        if (exists) {
-            newErrors.grade = 'Ya existe un aula con este grado y sección';
-            newErrors.section = 'Ya existe un aula con este grado y sección';
-        }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };

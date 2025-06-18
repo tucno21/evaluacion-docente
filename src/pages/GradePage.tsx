@@ -91,13 +91,8 @@ const GradePage = () => {
         if (!formData.date) {
             newErrors.date = 'La fecha es obligatoria';
         } else {
-            const selectedDate = new Date(formData.date);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-
-            if (selectedDate < today) {
-                newErrors.date = 'La fecha no puede ser anterior a hoy';
-            }
         }
 
         const validCriteria: EvaluationCriterion[] = criteria.filter(c => c.name.trim() !== '');
@@ -130,12 +125,8 @@ const GradePage = () => {
         if (!copyFormData.date) {
             newErrors.date = 'La fecha es obligatoria';
         } else {
-            const selectedDate = new Date(copyFormData.date);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            if (selectedDate < today) {
-                newErrors.date = 'La fecha no puede ser anterior a hoy';
-            }
         }
         setCopyErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -670,7 +661,6 @@ const GradePage = () => {
                                 id="evaluationDate"
                                 type="date"
                                 value={formData.date}
-                                // min={today}
                                 onChange={(e) => handleInputChange('date', e.target.value)}
                                 error={errors.date}
                                 inputClassName="focus:ring-primary-500"
@@ -805,7 +795,6 @@ const GradePage = () => {
                                 id="copyDate"
                                 type="date"
                                 value={copyFormData.date}
-                                // min={today}
                                 onChange={(e) => handleCopyInputChange('date', e.target.value)}
                                 error={copyErrors.date}
                             />

@@ -217,7 +217,7 @@ const EvaluationPage = () => {
 
             {/* Contenedor con scroll horizontal */}
             <div className="bg-white border border-neutral-400 cursor-pointer shadow-sm hover:shadow-md overflow-x-auto">
-                <div className="min-w-full">
+                <div className="min-w-full mb-2">
                     {/* Header */}
                     <div className="bg-neutral-50 border-b border-neutral-400 flex">
                         <div className="w-8 border-r border-neutral-400 p-2 text-center font-bold text-xs text-neutral-700 bg-neutral-100 sticky left-0 z-20 flex-shrink-0">
@@ -318,22 +318,22 @@ const EvaluationPage = () => {
 
             {/* Leyenda (sin cambios) */}
             <div className="mt-6 bg-white border border-neutral-200 shadow-sm p-2 md-p-4">
-                <div className="text-sm font-bold text-neutral-800 mb-2">Niveles de Logro</div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+                <div className="text-xs font-bold text-neutral-800 mb-2">Niveles de Logro</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] md:text-xs">
                     <div className="flex items-center space-x-2">
-                        <span className="bg-red-100 text-red-700 px-2 py-1 font-bold border border-red-700">C</span>
+                        <span className="bg-red-100 text-red-700 px-1.5 py-0.5 font-bold border border-red-700">C</span>
                         <span className="text-neutral-700">En inicio</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <span className="bg-yellow-100 text-yellow-700 px-2 py-1 font-bold border border-yellow-700">B</span>
+                        <span className="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 font-bold border border-yellow-700">B</span>
                         <span className="text-neutral-700">En proceso</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <span className="bg-blue-100 text-blue-700 px-2 py-1 font-bold border border-blue-700">A</span>
+                        <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 font-bold border border-blue-700">A</span>
                         <span className="text-neutral-700">Logro esperado</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <span className="bg-green-100 text-green-700 px-2 py-1 font-bold border border-green-700">AD</span>
+                        <span className="bg-green-100 text-green-700 px-1.5 py-0.5 font-bold border border-green-700">AD</span>
                         <span className="text-neutral-700">Logro destacado</span>
                     </div>
                 </div>

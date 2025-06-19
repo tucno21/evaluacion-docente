@@ -4,6 +4,7 @@ import { ClipboardList } from 'lucide-react';
 import type { StudentEvaluation, AchievementLevel, ParticipationEvaluation, ParticipationLevel } from '../types/types';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
+import BarChartCanvas from '../components/BarChartCanvas'; // Import the new component
 
 const EvaluationPage = () => {
     // --- INICIO: Herramientas de depuración ---
@@ -126,6 +127,56 @@ const EvaluationPage = () => {
             };
         });
     }, [students, participationEvaluations, matrixId]);
+
+    // Calculate statistics for the stacked bar chart
+    const chartData = useMemo(() => {
+        if (!currentMatrix || memoizedEvaluations.length === 0) return [];
+
+        const colors = {
+            'C': '#ef4444', // red-500
+            'B': '#f59e0b', // yellow-500
+            'A': '#0ea5e9', // blue-500
+            'AD': '#10b981', // green-500
+            '': '#e5e7e9' // white for empty/un-evaluated
+        };
+
+        const achievementLevels: AchievementLevel[] = ['C', 'B', 'A', 'AD'];
+
+        return currentMatrix.criteria.map(criterion => {
+            const levelCounts: { [key: string]: number } = { 'C': 0, 'B': 0, 'A': 0, 'AD': 0, '': 0 }; // Include empty level
+
+            memoizedEvaluations.forEach(studentEval => {
+                const criterionEvaluation = studentEval.criteriaEvaluations.find(ce => ce.criterionId === criterion.id);
+                if (criterionEvaluation) {
+                    if (achievementLevels.includes(criterionEvaluation.level)) {
+                        levelCounts[criterionEvaluation.level]++;
+                    } else {
+                        levelCounts['']++; // Count empty/un-evaluated
+                    }
+                } else {
+                    levelCounts['']++; // If no evaluation found for criterion, count as empty
+                }
+            });
+
+            const totalEvaluations = memoizedEvaluations.length;
+
+            const levelsData = Object.entries(levelCounts).map(([level, count]) => ({
+                level: level as AchievementLevel,
+                count,
+                percentage: totalEvaluations > 0 ? (count / totalEvaluations) * 100 : 0,
+                color: colors[level as AchievementLevel] || '#ccc'
+            }));
+
+            return {
+                label: criterion.name,
+                levels: levelsData.sort((a, b) => {
+                    // Sort levels for consistent stacking order (C, B, A, AD, then empty)
+                    const order = ['C', 'B', 'A', 'AD', ''];
+                    return order.indexOf(a.level) - order.indexOf(b.level);
+                })
+            };
+        });
+    }, [currentMatrix, memoizedEvaluations]);
 
 
     // HANDLERS SIMPLIFICADOS
@@ -314,6 +365,11 @@ const EvaluationPage = () => {
                         );
                     })}
                 </div>
+            </div>
+
+            {/* Gráfico Estadístico */}
+            <div className="flex p-4 justify-center items-center bg-white border border-neutral-200 shadow-sm">
+                <BarChartCanvas data={chartData} />
             </div>
 
             {/* Leyenda (sin cambios) */}

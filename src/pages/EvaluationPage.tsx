@@ -288,7 +288,7 @@ const EvaluationPage = () => {
                         <div className="flex flex-1 min-w-0">
                             {currentMatrix.criteria.map(criterion => (
                                 <div key={criterion.id} className="flex-1 min-w-20 border-r border-black pt-2 text-center bg-neutral-100 flex flex-col justify-between">
-                                    <div className="text-xs leading-tight mb-1 font-bold break-words px-1 pb-1 text-neutral-700">{criterion.name}</div>
+                                    <div className="text-[10px] leading-tight mb-1 font-bold break-words px-1 pb-1 text-neutral-700">{criterion.name}</div>
                                     <div className="flex justify-center w-full border-t border-neutral-400">
                                         <span className="bg-neutral-200 text-neutral-700 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400">C</span>
                                         <span className="bg-neutral-200 text-neutral-700 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400">B</span>

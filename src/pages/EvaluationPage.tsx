@@ -90,11 +90,16 @@ const EvaluationPage = () => {
     // DERIVACIÓN DE ESTADO CON `useMemo` EN LUGAR DE `useState` + `useEffect`
     // Calculamos los datos para la vista directamente desde el store.
     // `useMemo` asegura que este cálculo complejo solo se ejecute cuando los datos relevantes cambian.
+    const sortedStudents = useMemo(() => {
+        // Clonamos el array para no mutar el estado original y lo ordenamos
+        return [...students].sort((a, b) => a.fullName.localeCompare(b.fullName));
+    }, [students]);
+
     const memoizedEvaluations = useMemo(() => {
-        if (!currentMatrix || students.length === 0) return [];
+        if (!currentMatrix || sortedStudents.length === 0) return [];
 
         console.log("[DEBUG] Recalculando `memoizedEvaluations`.");
-        return students.map(student => {
+        return sortedStudents.map(student => {
             const existingEvaluation = studentEvaluations.find(se => se.studentId === student.id && se.matrixId === matrixId);
             const mergedCriteriaEvaluations = currentMatrix.criteria.map(criterion => {
                 const existingCriterionEval = existingEvaluation?.criteriaEvaluations.find(ce => ce.criterionId === criterion.id);
@@ -111,13 +116,13 @@ const EvaluationPage = () => {
                 criteriaEvaluations: mergedCriteriaEvaluations
             };
         });
-    }, [students, currentMatrix, studentEvaluations, matrixId]);
+    }, [sortedStudents, currentMatrix, studentEvaluations, matrixId]);
 
     const memoizedParticipations = useMemo(() => {
-        if (students.length === 0) return [];
+        if (sortedStudents.length === 0) return [];
 
         console.log("[DEBUG] Recalculando `memoizedParticipations`.");
-        return students.map(student => {
+        return sortedStudents.map(student => {
             const existingParticipation = participationEvaluations.find(pe => pe.studentId === student.id && pe.matrixId === matrixId);
             return existingParticipation || {
                 id: '',
@@ -126,7 +131,7 @@ const EvaluationPage = () => {
                 level: '' as ParticipationLevel
             };
         });
-    }, [students, participationEvaluations, matrixId]);
+    }, [sortedStudents, participationEvaluations, matrixId]);
 
     // Calculate statistics for the stacked bar chart
     const chartData = useMemo(() => {
@@ -296,7 +301,7 @@ const EvaluationPage = () => {
                     </div>
 
                     {/* Filas de estudiantes */}
-                    {students.map((student, studentIndex) => {
+                    {sortedStudents.map((student, studentIndex) => {
                         // Obtenemos los datos ya calculados desde las variables "memoized"
                         const studentEvaluation = memoizedEvaluations.find(se => se.studentId === student.id);
                         const studentParticipation = memoizedParticipations.find(pe => pe.studentId === student.id);

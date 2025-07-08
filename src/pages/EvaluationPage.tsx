@@ -214,7 +214,7 @@ const EvaluationPage = () => {
     };
 
     const handleParticipationChange = async (studentId: string, currentLevel: ParticipationLevel | '') => {
-        const participationLevels: ParticipationLevel[] = ['C', 'B', 'B+', 'A', 'F'];
+        const participationLevels: ParticipationLevel[] = ['F', 'C', 'B', 'B+', 'A', 'A+'];
         const currentIndex = participationLevels.indexOf(currentLevel as ParticipationLevel);
         const nextIndex = (currentIndex + 1) % participationLevels.length;
         const nextLevel = participationLevels[nextIndex];
@@ -317,7 +317,7 @@ const EvaluationPage = () => {
                                     {studentIndex + 1}
                                 </div>
                                 {/* Nombre fijo */}
-                                <div className="w-40 border-r border-black p-2 text-left font-medium text-xs bg-white sticky left-8 z-10 flex-shrink-0">
+                                <div className="w-40 border-r border-black p-2 text-left font-medium text-[10px] bg-white sticky left-8 z-10 flex-shrink-0">
                                     <div className="truncate leading-tight text-neutral-800">{student.fullName}</div>
                                 </div>
                                 {/* PARTICIPO Cell */}

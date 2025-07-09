@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, ArrowLeft, Home, DatabaseBackup } from 'lucide-react';
+import { BookOpen, ArrowLeft, Home, DatabaseBackup, HelpCircle } from 'lucide-react';
 import { useHeaderStore } from '../store/useHeaderStore';
 
 const MainLayout = () => {
@@ -27,6 +27,10 @@ const MainLayout = () => {
 
     const handleConfig = () => {
         navigate('/config');
+    };
+
+    const handleHelp = () => {
+        navigate('/help');
     };
 
     return (
@@ -80,14 +84,24 @@ const MainLayout = () => {
                             )}
                             {/* Botón para backup */}
                             {location.pathname === '/' && (
-                                <button
-                                    onClick={handleConfig}
-                                    className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/30"
-                                    aria-label="Configuración"
-                                    title="Copias de seguridad y restauración"
-                                >
-                                    <DatabaseBackup className="h-5 w-5 text-white" />
-                                </button>
+                                <>
+                                    <button
+                                        onClick={handleConfig}
+                                        className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/30"
+                                        aria-label="Configuración"
+                                        title="Copias de seguridad y restauración"
+                                    >
+                                        <DatabaseBackup className="h-5 w-5 text-white" />
+                                    </button>
+                                    <button
+                                        onClick={handleHelp}
+                                        className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/30"
+                                        aria-label="Ayuda"
+                                        title="Página de Ayuda"
+                                    >
+                                        <HelpCircle className="h-5 w-5 text-white" />
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>

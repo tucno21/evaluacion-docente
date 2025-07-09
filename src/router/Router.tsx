@@ -5,6 +5,7 @@ import GradePage from '../pages/GradePage';
 import StudentsPage from '../pages/StudentsPage';
 import EvaluationPage from '../pages/EvaluationPage';
 import ConfigPage from '../pages/ConfigPage';
+import HelpPage from '../pages/HelpPage';
 
 // Placeholder components for now
 const NotFoundPage = () => <div>404 Not Found</div>;
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
             {
                 path: 'config',
                 element: <ConfigPage />,
+            },
+            {
+                path: 'help',
+                element: <HelpPage />,
             },
         ],
     },

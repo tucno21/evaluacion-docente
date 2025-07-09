@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage';
 import GradePage from '../pages/GradePage';
 import StudentsPage from '../pages/StudentsPage';
 import EvaluationPage from '../pages/EvaluationPage';
+import ConfigPage from '../pages/ConfigPage';
 
 // Placeholder components for now
 const NotFoundPage = () => <div>404 Not Found</div>;
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
             {
                 path: 'grade/:classroomId/matrix/:matrixId/evaluate',
                 element: <EvaluationPage />,
+            },
+            {
+                path: 'config',
+                element: <ConfigPage />,
             },
         ],
     },

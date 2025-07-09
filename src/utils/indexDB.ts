@@ -354,3 +354,82 @@ export const getAllStudentEvaluations = (): Promise<StudentEvaluation[]> => {
 export const getAllParticipationEvaluations = (): Promise<ParticipationEvaluation[]> => {
     return getAllItems<ParticipationEvaluation>(STORES.participationEvaluations);
 };
+
+// New functions for backup and restore
+
+export const backupDatabase = async (): Promise<Record<string, any[]>> => {
+    const backupData: Record<string, any[]> = {};
+    for (const storeName of Object.values(STORES)) {
+        const items = await getAllItems(storeName);
+        backupData[storeName] = items;
+    }
+    return backupData;
+};
+
+export const restoreDatabase = async (data: Record<string, any[]>): Promise<void> => {
+    const db = await initDB();
+    const tx = db.transaction(Object.values(STORES), 'readwrite');
+
+    return new Promise((resolve, reject) => {
+        // Clear all stores first
+        let clearedCount = 0;
+        const storeNames = Object.values(STORES);
+
+        for (const storeName of storeNames) {
+            const request = tx.objectStore(storeName).clear();
+            request.onsuccess = () => {
+                clearedCount++;
+                if (clearedCount === storeNames.length) {
+                    // All stores cleared, now add new data
+                    for (const storeName of Object.keys(data)) {
+                        if (Object.values(STORES).includes(storeName)) {
+                            const store = tx.objectStore(storeName);
+                            for (const item of data[storeName]) {
+                                // Use put to avoid issues with existing keys if any logic changes
+                                store.put(item);
+                            }
+                        }
+                    }
+                }
+            };
+            request.onerror = () => {
+                // Don't reject immediately, let the transaction fail
+            };
+        }
+
+        tx.oncomplete = () => {
+            db.close();
+            resolve();
+        };
+        tx.onerror = () => {
+            db.close();
+            reject(tx.error);
+        };
+    });
+};
+
+export const checkIfDataExists = async (): Promise<boolean> => {
+    // Check a single, fundamental store. If classrooms exist, data exists.
+    // This is more efficient than checking all stores.
+    try {
+        const db = await initDB();
+        const tx = db.transaction(STORES.classrooms, 'readonly');
+        const store = tx.objectStore(STORES.classrooms);
+        const request = store.count();
+
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                resolve(request.result > 0);
+            };
+            request.onerror = () => {
+                reject(request.error);
+            };
+            tx.oncomplete = () => {
+                db.close();
+            };
+        });
+    } catch (error) {
+        console.error("Failed to check for data:", error);
+        return false; // Assume no data on error
+    }
+};

@@ -31,7 +31,10 @@ import {
     getParticipationEvaluationByMatrixAndStudent,
     getAllEvaluationMatrices, // New import
     getAllStudentEvaluations, // New import
-    getAllParticipationEvaluations // New import
+    getAllParticipationEvaluations, // New import
+    backupDatabase,
+    restoreDatabase,
+    checkIfDataExists
 } from '../utils/indexDB';
 
 interface AppState {
@@ -78,6 +81,11 @@ interface AppState {
     getAllEvaluationMatrices: () => Promise<EvaluationMatrix[]>;
     getAllStudentEvaluations: () => Promise<StudentEvaluation[]>; // Corrected type
     getAllParticipationEvaluations: () => Promise<ParticipationEvaluation[]>;
+
+    // Backup and Restore actions
+    backupData: () => Promise<void>;
+    restoreData: (data: Record<string, any[]>) => Promise<void>;
+    checkDataExists: () => Promise<boolean>;
 }
 
 
@@ -405,6 +413,50 @@ export const useAppStore = create<AppState>((set, _get) => ({
         } catch (error: any) {
             set({ error: error.message, loading: false });
             return [];
+        }
+    },
+
+    // ===== Backup and Restore actions =====
+    backupData: async () => {
+        set({ loading: true, error: null });
+        try {
+            const data = await backupDatabase();
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `eval-docente-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            set({ loading: false });
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
+        }
+    },
+    restoreData: async (data) => {
+        set({ loading: true, error: null });
+        try {
+            await restoreDatabase(data);
+            // Reload all data after restore
+            await _get().loadClassrooms();
+            // You might want to clear other specific data sets here if necessary
+            set({ students: [], evaluationMatrices: [], studentEvaluations: [], participationEvaluations: [], loading: false });
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
+        }
+    },
+    checkDataExists: async () => {
+        set({ loading: true, error: null });
+        try {
+            const exists = await checkIfDataExists();
+            set({ loading: false });
+            return exists;
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
+            return true; // Assume data exists on error to be safe
         }
     },
 }));

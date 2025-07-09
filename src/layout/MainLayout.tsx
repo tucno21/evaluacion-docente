@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, ArrowLeft, Home } from 'lucide-react';
+import { BookOpen, ArrowLeft, Home, DatabaseBackup } from 'lucide-react';
 import { useHeaderStore } from '../store/useHeaderStore';
 
 const MainLayout = () => {
@@ -23,6 +23,10 @@ const MainLayout = () => {
 
     const handleHome = () => {
         navigate('/');
+    };
+
+    const handleConfig = () => {
+        navigate('/config');
     };
 
     return (
@@ -69,8 +73,20 @@ const MainLayout = () => {
                                     onClick={handleHome}
                                     className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/30"
                                     aria-label="Inicio"
+                                    title="Volver al inicio"
                                 >
                                     <Home className="h-5 w-5 text-white" />
+                                </button>
+                            )}
+                            {/* Botón para backup */}
+                            {location.pathname === '/' && (
+                                <button
+                                    onClick={handleConfig}
+                                    className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/30"
+                                    aria-label="Configuración"
+                                    title="Copias de seguridad y restauración"
+                                >
+                                    <DatabaseBackup className="h-5 w-5 text-white" />
                                 </button>
                             )}
                         </div>

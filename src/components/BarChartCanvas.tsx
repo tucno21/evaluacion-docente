@@ -65,9 +65,11 @@ const BarChartCanvas: React.FC<BarChartCanvasProps> = ({ data }) => {
         const chartWidth = canvasWidth - 2 * padding;
         const chartHeight = canvasHeight - 2 * padding;
 
+        const isDarkMode = document.documentElement.classList.contains('dark');
+
         // Handle case where data is empty to prevent division by zero
         if (data.length === 0) {
-            ctx.fillStyle = '#666';
+            ctx.fillStyle = isDarkMode ? '#999' : '#666';
             ctx.font = '16px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('No hay datos para mostrar el gráfico.', canvasWidth / 2, canvasHeight / 2);
@@ -85,7 +87,7 @@ const BarChartCanvas: React.FC<BarChartCanvasProps> = ({ data }) => {
         ctx.beginPath();
         ctx.moveTo(padding, padding);
         ctx.lineTo(padding, canvasHeight - padding);
-        ctx.strokeStyle = '#666';
+        ctx.strokeStyle = isDarkMode ? '#555' : '#666';
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -93,12 +95,12 @@ const BarChartCanvas: React.FC<BarChartCanvasProps> = ({ data }) => {
         ctx.beginPath();
         ctx.moveTo(padding, canvasHeight - padding);
         ctx.lineTo(canvasWidth - padding, canvasHeight - padding);
-        ctx.strokeStyle = '#666';
+        ctx.strokeStyle = isDarkMode ? '#555' : '#666';
         ctx.lineWidth = 1;
         ctx.stroke();
 
         // Draw Y-axis labels (percentages)
-        ctx.fillStyle = '#333';
+        ctx.fillStyle = isDarkMode ? '#ccc' : '#333';
         ctx.font = '10px Arial';
         ctx.textAlign = 'right';
         const numTicks = 5; // 0%, 25%, 50%, 75%, 100%
@@ -109,7 +111,7 @@ const BarChartCanvas: React.FC<BarChartCanvasProps> = ({ data }) => {
             ctx.beginPath();
             ctx.moveTo(padding, y);
             ctx.lineTo(padding + 5, y);
-            ctx.strokeStyle = '#ccc';
+            ctx.strokeStyle = isDarkMode ? '#444' : '#ccc';
             ctx.stroke();
         }
 
@@ -120,7 +122,7 @@ const BarChartCanvas: React.FC<BarChartCanvasProps> = ({ data }) => {
 
             // Draw criterion label below X-axis with rotation for long labels
             ctx.save(); // Save the current canvas state
-            ctx.fillStyle = '#333';
+            ctx.fillStyle = isDarkMode ? '#ccc' : '#333';
             ctx.font = '10px Arial'; // Smaller font for rotated labels
             ctx.textAlign = 'right'; // Align text to the right for rotation
             ctx.translate(x + actualBarWidth / 2, canvasHeight - padding + 5); // Translate to the pivot point
@@ -152,7 +154,7 @@ const BarChartCanvas: React.FC<BarChartCanvasProps> = ({ data }) => {
 
     return (
         <div ref={containerRef} style={{ width: '100%', overflowX: 'auto' }}>
-            <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight} className="border border-neutral-300 bg-white block mx-auto">
+            <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight} className="border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-dark-bg-card block mx-auto">
                 Your browser does not support the HTML canvas tag.
             </canvas>
         </div>

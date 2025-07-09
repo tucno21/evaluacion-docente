@@ -110,10 +110,10 @@ const HomePage = () => {
         <div className="min-h-full space-y-6">
             {/* Header compacto */}
             <div className="text-center sm:text-left">
-                <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-1">
+                <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-dark-text-primary mb-1">
                     Mis Aulas
                 </h2>
-                <p className="text-sm sm:text-base text-neutral-600">
+                <p className="text-sm sm:text-base text-neutral-600 dark:text-dark-text-secondary">
                     Gestiona tus aulas y evaluaciones
                 </p>
             </div>
@@ -122,13 +122,13 @@ const HomePage = () => {
             {/* Lista de aulas */}
             {classrooms.length === 0 ? (
                 <div className="text-center py-12 sm:py-16">
-                    <div className="bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 shadow-inner">
-                        <School className="h-8 w-8 sm:h-10 sm:w-10 text-neutral-400" />
+                    <div className="bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-700 rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 shadow-inner">
+                        <School className="h-8 w-8 sm:h-10 sm:w-10 text-neutral-400 dark:text-neutral-500" />
                     </div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">
+                    <h3 className="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-dark-text-primary mb-2">
                         Sin aulas creadas
                     </h3>
-                    <p className="text-sm sm:text-base text-neutral-600 mb-6 max-w-sm mx-auto px-4">
+                    <p className="text-sm sm:text-base text-neutral-600 dark:text-dark-text-secondary mb-6 max-w-sm mx-auto px-4">
                         Crea tu primera aula para comenzar a gestionar estudiantes
                     </p>
                 </div>
@@ -137,7 +137,7 @@ const HomePage = () => {
                     {classrooms.map((classroom) => (
                         <div
                             key={classroom.id}
-                            className="bg-white rounded-xl border border-neutral-200 hover:border-primary-300 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.99]"
+                            className="bg-bg-card dark:bg-dark-bg-card rounded-xl border border-neutral-200 dark:border-dark-border hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.99]"
                             onClick={() => goToGrade(classroom.id)}
                         >
                             <div className="p-4">
@@ -156,11 +156,11 @@ const HomePage = () => {
 
                                         {/* Información */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-neutral-900 truncate text-base sm:text-lg">
+                                            <h3 className="font-semibold text-neutral-900 dark:text-dark-text-primary truncate text-base sm:text-lg">
                                                 {classroom.name} <span>{classroom.grade}{classroom.section}</span>
                                             </h3>
                                             <div className="flex items-center space-x-4 mt-1">
-                                                <div className="flex items-center text-xs text-neutral-500">
+                                                <div className="flex items-center text-xs text-neutral-500 dark:text-dark-text-secondary">
                                                     <Calendar className="h-3 w-3 mr-1" />
                                                     <span className="hidden sm:inline">
                                                         {new Date(classroom.createdAt).toLocaleDateString()}
@@ -180,7 +180,7 @@ const HomePage = () => {
                                     <div className="flex items-center space-x-1">
                                         <button
                                             onClick={(e) => handleDeleteClassroom(e, classroom.id)}
-                                            className="p-2 text-neutral-400 hover:text-error-600 hover:bg-error-50 rounded-lg transition-all duration-200"
+                                            className="p-2 text-neutral-400 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/50 rounded-lg transition-all duration-200"
                                             aria-label="Eliminar aula"
                                         >
                                             <Trash2 className="h-4 w-4" />
@@ -205,20 +205,20 @@ const HomePage = () => {
             {/* Modal mejorado */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md lg:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md lg:max-w-lg max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100 dark:border-dark-border">
                             <div>
-                                <h2 className="text-xl font-bold text-neutral-900">
+                                <h2 className="text-xl font-bold text-neutral-900 dark:text-dark-text-primary">
                                     Nueva Aula
                                 </h2>
-                                <p className="text-sm text-neutral-600 mt-1">
+                                <p className="text-sm text-neutral-600 dark:text-dark-text-secondary mt-1">
                                     Completa la información básica
                                 </p>
                             </div>
                             <button
                                 onClick={closeModal}
-                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded-lg transition-colors"
                             >
                                 <X className="h-5 w-5" />
                             </button>

@@ -14,11 +14,11 @@ const Inputs: React.FC<InputsProps> = ({
     id,
     error,
     containerClassName = '',
-    labelClassName = 'block text-sm font-semibold text-neutral-700 mb-1',
+    labelClassName = 'block text-sm font-semibold text-neutral-700 dark:text-dark-text-secondary mb-1',
     inputClassName = '',
     ...props
 }) => {
-    const defaultInputClasses = `w-full px-3 py-2 md:px-4 md:py-3 border rounded-xl focus:outline-none focus:ring focus:ring-accent-500 focus:border-transparent transition-all ${error ? 'border-error-500' : 'border-neutral-200 hover:border-neutral-400'
+    const defaultInputClasses = `w-full px-3 py-2 md:px-4 md:py-3 border rounded-xl focus:outline-none focus:ring focus:ring-accent-500 focus:border-transparent transition-all bg-white dark:bg-dark-bg-card text-neutral-800 dark:text-dark-text-primary placeholder-neutral-400 dark:placeholder-neutral-500 ${error ? 'border-error-500' : 'border-neutral-200 dark:border-dark-border hover:border-neutral-400 dark:hover:border-neutral-600'
         }`;
 
     return (

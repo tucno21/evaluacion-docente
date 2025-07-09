@@ -118,28 +118,28 @@ const Toast: React.FC<ToastProps> = ({
 
     const typeStyles = {
         success: {
-            container: 'bg-green-50 border-green-200 text-green-900',
-            icon: 'text-green-600',
+            container: 'bg-green-50 border-green-200 text-green-900 dark:bg-green-900/50 dark:border-green-800 dark:text-green-200',
+            icon: 'text-green-600 dark:text-green-400',
             progress: 'bg-green-500',
-            closeHover: 'hover:bg-green-100'
+            closeHover: 'hover:bg-green-100 dark:hover:bg-green-800'
         },
         error: {
-            container: 'bg-red-50 border-red-200 text-red-900',
-            icon: 'text-red-600',
+            container: 'bg-red-50 border-red-200 text-red-900 dark:bg-red-900/50 dark:border-red-800 dark:text-red-200',
+            icon: 'text-red-600 dark:text-red-400',
             progress: 'bg-red-500',
-            closeHover: 'hover:bg-red-100'
+            closeHover: 'hover:bg-red-100 dark:hover:bg-red-800'
         },
         warning: {
-            container: 'bg-amber-50 border-amber-200 text-amber-900',
-            icon: 'text-amber-600',
+            container: 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-900/50 dark:border-amber-800 dark:text-amber-200',
+            icon: 'text-amber-600 dark:text-amber-400',
             progress: 'bg-amber-500',
-            closeHover: 'hover:bg-amber-100'
+            closeHover: 'hover:bg-amber-100 dark:hover:bg-amber-800'
         },
         info: {
-            container: 'bg-blue-50 border-blue-200 text-blue-900',
-            icon: 'text-blue-600',
+            container: 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-900/50 dark:border-blue-800 dark:text-blue-200',
+            icon: 'text-blue-600 dark:text-blue-400',
             progress: 'bg-blue-500',
-            closeHover: 'hover:bg-blue-100'
+            closeHover: 'hover:bg-blue-100 dark:hover:bg-blue-800'
         }
     };
 

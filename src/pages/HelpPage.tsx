@@ -43,23 +43,23 @@ const HelpPage: React.FC = () => {
     ];
 
     return (
-        <div className="p-4 md:p-6 bg-gray-50">
-            <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">Guía Rápida de Uso</h1>
+        <div className="p-4 md:p-6 bg-gray-50 dark:bg-dark-bg-soft">
+            <h1 className="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-gray-200">Guía Rápida de Uso</h1>
             <div className="max-w-4xl mx-auto grid gap-8 md:grid-cols-2">
                 {features.map((feature, index) => (
-                    <div key={index} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex items-start space-x-4">
+                    <div key={index} className="bg-white dark:bg-dark-bg-card p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex items-start space-x-4">
                         <div className="flex-shrink-0">
                             {feature.icon}
                         </div>
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-700 mb-2">{feature.title}</h2>
-                            <p className="text-gray-600">{feature.description}</p>
+                            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{feature.title}</h2>
+                            <p className="text-gray-600 dark:text-gray-400">{feature.description}</p>
                         </div>
                     </div>
                 ))}
             </div>
             <div className="text-center mt-12">
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                     ¿Tienes más preguntas? Contacta con el soporte o revisa la documentación completa.
                 </p>
             </div>

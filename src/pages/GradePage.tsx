@@ -453,13 +453,13 @@ const GradePage = () => {
             {/* Lista de matrices agrupadas por mes */}
             {Object.keys(groupedMatrices).length === 0 ? (
                 <div className="text-center py-12 sm:py-16">
-                    <div className="bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 shadow-inner">
-                        <ClipboardList className="h-8 w-8 sm:h-10 sm:w-10 text-neutral-400" />
+                    <div className="bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-700 rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 shadow-inner">
+                        <ClipboardList className="h-8 w-8 sm:h-10 sm:w-10 text-neutral-400 dark:text-neutral-500" />
                     </div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">
+                    <h3 className="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-dark-text-primary mb-2">
                         Sin matrices de evaluación
                     </h3>
-                    <p className="text-sm sm:text-base text-neutral-600 mb-6 max-w-sm mx-auto px-4">
+                    <p className="text-sm sm:text-base text-neutral-600 dark:text-dark-text-secondary mb-6 max-w-sm mx-auto px-4">
                         Crea tu primera matriz para comenzar a evaluar estudiantes
                     </p>
                 </div>
@@ -471,13 +471,13 @@ const GradePage = () => {
                             <div key={monthKey} className="space-y-4">
                                 {/* Header del mes mejorado */}
                                 <div className="flex items-center space-x-3 px-3">
-                                    <div className="h-px bg-gradient-to-r from-transparent to-neutral-200 flex-1"></div>
-                                    <div className="bg-white border border-neutral-200 px-4 py-2 rounded-full shadow-sm">
-                                        <span className="text-sm font-semibold text-neutral-700">
+                                    <div className="h-px bg-gradient-to-r from-transparent to-neutral-200 dark:to-neutral-700 flex-1"></div>
+                                    <div className="bg-white dark:bg-dark-bg-card border border-neutral-200 dark:border-dark-border px-4 py-2 rounded-full shadow-sm">
+                                        <span className="text-sm font-semibold text-neutral-700 dark:text-dark-text-secondary">
                                             {group.label}
                                         </span>
                                     </div>
-                                    <div className="h-px bg-gradient-to-l from-transparent to-neutral-200 flex-1"></div>
+                                    <div className="h-px bg-gradient-to-l from-transparent to-neutral-200 dark:to-neutral-700 flex-1"></div>
                                 </div>
 
                                 {/* Matrices del mes */}
@@ -485,9 +485,9 @@ const GradePage = () => {
                                     {group.matrices.map((matrix) => (
                                         <div
                                             key={matrix.id}
-                                            className={`bg-white rounded-2xl border transition-all duration-300 ${expandedMatrixId === matrix.id
-                                                ? 'border-accent-200 shadow-lg shadow-accent-100/50'
-                                                : 'border-neutral-200 hover:border-accent-200 shadow-sm hover:shadow-md'
+                                            className={`bg-bg-card dark:bg-dark-bg-card rounded-2xl border transition-all duration-300 ${expandedMatrixId === matrix.id
+                                                ? 'border-accent-200 dark:border-accent-700 shadow-lg shadow-accent-100/50 dark:shadow-accent-900/50'
+                                                : 'border-neutral-200 dark:border-dark-border hover:border-accent-200 dark:hover:border-accent-700 shadow-sm hover:shadow-md'
                                                 }`}
                                         >
                                             {/* Área clickeable principal mejorada */}
@@ -495,17 +495,17 @@ const GradePage = () => {
                                                 <div className="flex flex-1 justify-between items-center">
                                                     <div className="flex gap-x-3 items-center">
                                                         {/* Icono mejorado */}
-                                                        <div className="bg-gradient-to-br from-accent-100 via-accent-200 to-accent-300 p-3 rounded-2xl shrink-0 shadow-sm">
-                                                            <ClipboardList className="h-7 w-6 text-accent-700" />
+                                                        <div className="bg-gradient-to-br from-accent-100 via-accent-200 to-accent-300 dark:from-accent-800 dark:via-accent-900 dark:to-black p-3 rounded-2xl shrink-0 shadow-sm">
+                                                            <ClipboardList className="h-7 w-6 text-accent-700 dark:text-accent-300" />
                                                         </div>
                                                         <div className="">
-                                                            <h3 className="font-bold text-neutral-900 text-base sm:text-lg leading-tight">
+                                                            <h3 className="font-bold text-neutral-900 dark:text-dark-text-primary text-base sm:text-lg leading-tight">
                                                                 {matrix.name}
                                                             </h3>
                                                             {/* Metadatos con mejor espaciado */}
-                                                            <div className="flex gap-x-3 text-xs text-neutral-600">
-                                                                <div className="flex items-center bg-neutral-50 px-2 py-1 rounded-lg">
-                                                                    <Calendar className="h-3 w-3 mr-1.5 shrink-0 text-neutral-500" />
+                                                            <div className="flex gap-x-3 text-xs text-neutral-600 dark:text-dark-text-secondary">
+                                                                <div className="flex items-center bg-neutral-50 dark:bg-neutral-700/50 px-2 py-1 rounded-lg">
+                                                                    <Calendar className="h-3 w-3 mr-1.5 shrink-0 text-neutral-500 dark:text-neutral-400" />
                                                                     <span className="font-medium">
                                                                         {new Date(matrix.date).toLocaleDateString('es', {
                                                                             day: '2-digit',
@@ -514,8 +514,8 @@ const GradePage = () => {
                                                                         })}
                                                                     </span>
                                                                 </div>
-                                                                <div className="flex items-center bg-neutral-50 px-2 py-1 rounded-lg">
-                                                                    <CheckCircle className="h-3 w-3 mr-1.5 shrink-0 text-neutral-500" />
+                                                                <div className="flex items-center bg-neutral-50 dark:bg-neutral-700/50 px-2 py-1 rounded-lg">
+                                                                    <CheckCircle className="h-3 w-3 mr-1.5 shrink-0 text-neutral-500 dark:text-neutral-400" />
                                                                     <span className="font-medium">{matrix.criteria.length} criterios</span>
                                                                 </div>
                                                             </div>
@@ -530,8 +530,8 @@ const GradePage = () => {
                                                                 setExpandedMatrixId(prevId => (prevId === matrix.id ? null : matrix.id));
                                                             }}
                                                             className={`p-2 rounded-full transition-all duration-200 shrink-0 ${expandedMatrixId === matrix.id
-                                                                ? 'bg-accent-100 text-accent-600 rotate-180'
-                                                                : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                                                                ? 'bg-accent-100 dark:bg-accent-800 text-accent-600 dark:text-accent-300 rotate-180'
+                                                                : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-600'
                                                                 }`}
                                                             aria-label={expandedMatrixId === matrix.id ? "Contraer acciones" : "Expandir acciones"}
                                                         >
@@ -547,19 +547,19 @@ const GradePage = () => {
                                             <div className={`overflow-hidden transition-all duration-300 ease-out ${expandedMatrixId === matrix.id ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
                                                 }`}>
                                                 {/* Separador sutil */}
-                                                <div className="h-px bg-gradient-to-r from-transparent via-neutral-400 to-transparent mx-4"></div>
+                                                <div className="h-px bg-gradient-to-r from-transparent via-neutral-400 dark:via-neutral-700 to-transparent mx-4"></div>
 
                                                 {/* Grid de botones optimizado para mobile */}
                                                 <div className="grid grid-cols-4 gap-0">
                                                     {/* Botón Descargar */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleSingleMatrixDownloadExcel(matrix); }}
-                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 active:scale-95 active:bg-green-100 first:rounded-bl-2xl"
+                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 dark:text-neutral-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/50 transition-all duration-200 active:scale-95 active:bg-green-100 first:rounded-bl-2xl"
                                                         aria-label="Descargar Excel"
                                                         disabled={isDownloadingExcel}
                                                     >
-                                                        <div className="bg-green-100 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-green-200 transition-colors">
-                                                            <FileDown className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
+                                                        <div className="bg-green-100 dark:bg-green-800/50 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-green-200 transition-colors">
+                                                            <FileDown className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
                                                         </div>
                                                         <span className="text-[0.65rem] md:text-xs font-medium">Excel</span>
                                                     </button>
@@ -567,11 +567,11 @@ const GradePage = () => {
                                                     {/* Botón Copiar */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleCopyMatrix(matrix); }}
-                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 active:scale-95 active:bg-primary-100"
+                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/50 transition-all duration-200 active:scale-95 active:bg-primary-100"
                                                         aria-label="Copiar matriz"
                                                     >
-                                                        <div className="bg-primary-100 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-primary-200 transition-colors">
-                                                            <Copy className="h-4 w-4 md:h-5 md:w-5 text-primary-600" />
+                                                        <div className="bg-primary-100 dark:bg-primary-800/50 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-primary-200 transition-colors">
+                                                            <Copy className="h-4 w-4 md:h-5 md:w-5 text-primary-600 dark:text-primary-400" />
                                                         </div>
                                                         <span className="text-[0.65rem] md:text-xs font-medium">Copiar</span>
                                                     </button>
@@ -579,11 +579,11 @@ const GradePage = () => {
                                                     {/* Botón Editar */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleEditMatrix(matrix.id); }}
-                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 hover:text-accent-600 hover:bg-accent-50 transition-all duration-200 active:scale-95 active:bg-accent-100"
+                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 dark:text-neutral-300 hover:text-accent-600 dark:hover:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-900/50 transition-all duration-200 active:scale-95 active:bg-accent-100"
                                                         aria-label="Editar matriz"
                                                     >
-                                                        <div className="bg-accent-100 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-accent-200 transition-colors">
-                                                            <Pencil className="h-4 w-4 md:h-5 md:w-5 text-accent-600" />
+                                                        <div className="bg-accent-100 dark:bg-accent-800/50 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-accent-200 transition-colors">
+                                                            <Pencil className="h-4 w-4 md:h-5 md:w-5 text-accent-600 dark:text-accent-400" />
                                                         </div>
                                                         <span className="text-[0.65rem] md:text-xs font-medium">Editar</span>
                                                     </button>
@@ -591,11 +591,11 @@ const GradePage = () => {
                                                     {/* Botón Eliminar */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleDeleteMatrix(matrix.id); }}
-                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 hover:text-error-600 hover:bg-error-50 transition-all duration-200 active:scale-95 active:bg-error-100 last:rounded-br-2xl"
+                                                        className="flex flex-col items-center justify-center py-3 text-neutral-600 dark:text-neutral-300 hover:text-error-600 dark:hover:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/50 transition-all duration-200 active:scale-95 active:bg-error-100 last:rounded-br-2xl"
                                                         aria-label="Eliminar matriz"
                                                     >
-                                                        <div className="bg-error-100 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-error-200 transition-colors">
-                                                            <Trash2 className="h-4 w-4 md:h-5 md:w-5 text-error-600" />
+                                                        <div className="bg-error-100 dark:bg-error-800/50 p-1.5 md:p-2 rounded-xl mb-1 group-hover:bg-error-200 transition-colors">
+                                                            <Trash2 className="h-4 w-4 md:h-5 md:w-5 text-error-600 dark:text-error-400" />
                                                         </div>
                                                         <span className="text-[0.65rem] md:text-xs font-medium">Eliminar</span>
                                                     </button>
@@ -621,20 +621,20 @@ const GradePage = () => {
             {/* Modal para crear/editar matriz */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md lg:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md lg:max-w-lg max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 dark:border-dark-border">
                             <div>
-                                <h2 className="text-xl font-bold text-neutral-900">
+                                <h2 className="text-xl font-bold text-neutral-900 dark:text-dark-text-primary">
                                     {editingMatrixId ? 'Editar Matriz' : 'Nueva Matriz'}
                                 </h2>
-                                <p className="text-sm text-neutral-600 mt-1">
+                                <p className="text-sm text-neutral-600 dark:text-dark-text-secondary mt-1">
                                     {editingMatrixId ? 'Modifica los datos de la matriz' : 'Completa la información de evaluación'}
                                 </p>
                             </div>
                             <button
                                 onClick={closeModal}
-                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded-lg transition-colors"
                                 aria-label="Cerrar modal"
                             >
                                 <X className="h-5 w-5" />
@@ -669,10 +669,10 @@ const GradePage = () => {
                             {/* Criterios de evaluación */}
                             <div>
                                 <div className="flex items-center justify-between mb-1">
-                                    <label className="block text-sm font-semibold text-neutral-700">
+                                    <label className="block text-sm font-semibold text-neutral-700 dark:text-dark-text-secondary">
                                         Criterios de Evaluación
                                     </label>
-                                    <span className="text-xs text-neutral-500 bg-neutral-100 px-2 py-1 rounded-full">
+                                    <span className="text-xs text-neutral-500 bg-neutral-100 dark:bg-neutral-700 dark:text-neutral-300 px-2 py-1 rounded-full">
                                         {criteria.length}/5
                                     </span>
                                 </div>
@@ -695,7 +695,7 @@ const GradePage = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => removeCriteria(criterion.id)}
-                                                    className="p-2 text-error-600 hover:bg-error-50 rounded-lg transition-colors"
+                                                    className="p-2 text-error-600 hover:bg-error-50 dark:hover:bg-error-900/50 rounded-lg transition-colors"
                                                     aria-label="Eliminar criterio"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
@@ -751,20 +751,20 @@ const GradePage = () => {
             {/* Modal para copiar matriz */}
             {isCopyModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100 dark:border-dark-border">
                             <div>
-                                <h2 className="text-xl font-bold text-neutral-900">
+                                <h2 className="text-xl font-bold text-neutral-900 dark:text-dark-text-primary">
                                     Copiar Matriz "{matrixToCopy?.name}"
                                 </h2>
-                                <p className="text-sm text-neutral-600 mt-1">
+                                <p className="text-sm text-neutral-600 dark:text-dark-text-secondary mt-1">
                                     Selecciona el aula y la fecha para la nueva matriz.
                                 </p>
                             </div>
                             <button
                                 onClick={closeCopyModal}
-                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded-lg transition-colors"
                                 aria-label="Cerrar modal de copiar"
                             >
                                 <X className="h-5 w-5" />
@@ -836,20 +836,20 @@ const GradePage = () => {
             {/* Modal para exportar a Excel por rango de fechas */}
             {isExportModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100 dark:border-dark-border">
                             <div>
-                                <h2 className="text-xl font-bold text-neutral-900">
+                                <h2 className="text-xl font-bold text-neutral-900 dark:text-dark-text-primary">
                                     Exportar Reporte a Excel
                                 </h2>
-                                <p className="text-sm text-neutral-600 mt-1">
+                                <p className="text-sm text-neutral-600 dark:text-dark-text-secondary mt-1">
                                     Selecciona el tipo de reporte y el rango de fechas.
                                 </p>
                             </div>
                             <button
                                 onClick={closeExportModal}
-                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded-lg transition-colors"
                                 aria-label="Cerrar modal de exportación"
                             >
                                 <X className="h-5 w-5" />

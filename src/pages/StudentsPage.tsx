@@ -254,17 +254,17 @@ const StudentsPage = () => {
     return (
         <div className="min-h-full space-y-6 px-2 pb-4 sm:px-6 lg:px-8">
             {/* Header y Resumen */}
-            <div className="pt-1 pb-2 border-b border-neutral-200 sm:border-none">
+            <div className="pt-1 pb-2 border-b border-neutral-200 dark:border-neutral-700 sm:border-none">
                 <div className="flex justify-between">
                     <div className="flex items-center space-x-4 mb-4">
-                        <div className="bg-secondary-100 p-3 rounded-xl">
-                            <Users className="h-7 w-7 text-secondary-600" />
+                        <div className="bg-secondary-100 dark:bg-secondary-800/50 p-3 rounded-xl">
+                            <Users className="h-7 w-7 text-secondary-600 dark:text-secondary-300" />
                         </div>
                         <div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-neutral-900">
+                            <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-dark-text-primary">
                                 Estudiantes
                             </h2>
-                            <p className="text-sm sm:text-base text-neutral-600">
+                            <p className="text-sm sm:text-base text-neutral-600 dark:text-dark-text-secondary">
                                 {students.length} estudiante{students.length !== 1 ? 's' : ''} registrado{students.length !== 1 ? 's' : ''}
                             </p>
                         </div>
@@ -283,13 +283,13 @@ const StudentsPage = () => {
 
                 {/* Barra de búsqueda */}
                 <div className="relative mb-2">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400 dark:text-neutral-500" />
                     <input
                         type="text"
                         placeholder="Buscar estudiante por nombre..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                        className="w-full pl-10 pr-4 py-3 border border-neutral-300 dark:border-dark-border rounded-xl focus:outline-none focus:ring focus:ring-primary-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-dark-bg-card text-neutral-800 dark:text-dark-text-primary placeholder-neutral-400 dark:placeholder-neutral-500"
                     />
                 </div>
             </div>
@@ -297,14 +297,14 @@ const StudentsPage = () => {
             {/* Lista de estudiantes */}
             <div className="mb-4">
                 {sortedAndFilteredStudents.length === 0 ? (
-                    <div className="text-center py-12 px-4 bg-white rounded-xl border-2 border-dashed border-neutral-300">
-                        <div className="bg-neutral-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                            <Users className="h-8 w-8 text-neutral-400" />
+                    <div className="text-center py-12 px-4 bg-bg-card dark:bg-dark-bg-card rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                            <Users className="h-8 w-8 text-neutral-400 dark:text-neutral-500" />
                         </div>
-                        <h3 className="text-lg font-medium text-neutral-900 mb-2">
+                        <h3 className="text-lg font-medium text-neutral-900 dark:text-dark-text-primary mb-2">
                             {searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes registrados'}
                         </h3>
-                        <p className="text-neutral-600 mb-4">
+                        <p className="text-neutral-600 dark:text-dark-text-secondary mb-4">
                             {searchTerm
                                 ? 'Intenta con otro término de búsqueda'
                                 : 'Importa estudiantes desde un archivo Excel o registra uno nuevo para comenzar.'
@@ -329,38 +329,38 @@ const StudentsPage = () => {
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
-                        <div className="px-4 py-2 bg-neutral-50 border-b border-neutral-200">
-                            <h2 className="text-lg font-semibold text-neutral-900">
+                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-xl shadow-sm border border-neutral-200 dark:border-dark-border overflow-hidden">
+                        <div className="px-4 py-2 bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-dark-border">
+                            <h2 className="text-lg font-semibold text-neutral-900 dark:text-dark-text-primary">
                                 Lista de Estudiantes
                             </h2>
                         </div>
-                        <div className="divide-y divide-neutral-200">
+                        <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
                             {sortedAndFilteredStudents.map((student: Student, index: number) => (
                                 <div
                                     key={student.id}
-                                    className="px-4 py-2 hover:bg-neutral-50 transition-colors duration-150"
+                                    className="px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors duration-150"
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-4 min-w-0 flex-1">
-                                            <div className="bg-primary-100 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
-                                                <span className="text-primary-700 font-semibold text-lg">
+                                            <div className="bg-primary-100 dark:bg-primary-800/50 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
+                                                <span className="text-primary-700 dark:text-primary-300 font-semibold text-lg">
                                                     {student.fullName.charAt(0).toUpperCase()}
                                                 </span>
                                             </div>
                                             <div className="min-w-0">
-                                                <h3 className="text-base font-medium text-neutral-900 truncate">
+                                                <h3 className="text-base font-medium text-neutral-900 dark:text-dark-text-primary truncate">
                                                     {student.fullName}
                                                 </h3>
                                             </div>
                                         </div>
                                         <div className="flex items-center space-x-3 flex-shrink-0 ml-4">
-                                            <div className="bg-neutral-100 text-neutral-700 text-xs font-medium px-2 py-1 rounded-full">
+                                            <div className="bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-medium px-2 py-1 rounded-full">
                                                 #{String(index + 1).padStart(2, '0')}
                                             </div>
                                             <button
                                                 onClick={() => handleDeleteStudent(student)}
-                                                className="text-error-500 hover:text-error-700 p-1 rounded-full hover:bg-error-50 transition-colors"
+                                                className="text-error-500 hover:text-error-700 p-1 rounded-full hover:bg-error-50 dark:hover:bg-error-900/50 transition-colors"
                                                 aria-label={`Eliminar estudiante ${student.fullName}`}
                                             >
                                                 <Trash2 className="h-5 w-5" />
@@ -421,15 +421,15 @@ const StudentsPage = () => {
             {/* Modal de importación */}
             {isImportModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between px-6 py-2 border-b border-neutral-100">
-                            <h2 className="text-xl font-bold text-neutral-900">
+                        <div className="flex items-center justify-between px-6 py-2 border-b border-neutral-100 dark:border-dark-border">
+                            <h2 className="text-xl font-bold text-neutral-900 dark:text-dark-text-primary">
                                 Importar Estudiantes
                             </h2>
                             <button
                                 onClick={closeImportModal}
-                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded-lg transition-colors"
                                 disabled={isProcessing}
                             >
                                 <X className="h-5 w-5" />
@@ -441,11 +441,11 @@ const StudentsPage = () => {
                             {!selectedFile ? (
                                 <>
                                     <div className="mb-4">
-                                        <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-dark-text-primary mb-2">
                                             Instrucciones
                                         </h3>
-                                        <div className="bg-info-50 border border-info-200 rounded-lg p-4">
-                                            <ul className="text-sm text-info-800 space-y-1 list-disc list-inside">
+                                        <div className="bg-info-50 dark:bg-info-700/50 border border-info-100 dark:border-info-700 rounded-lg p-4">
+                                            <ul className="text-sm text-info-800 dark:text-info-300 space-y-1 list-disc list-inside">
                                                 <li>Descarga primero la plantilla Excel.</li>
                                                 <li>Completa los datos de los estudiantes.</li>
                                                 <li>Guarda el archivo en formato .xlsx.</li>
@@ -457,21 +457,21 @@ const StudentsPage = () => {
                                     {/* Zona de arrastrar y soltar */}
                                     <div
                                         className={`border-2 border-dashed rounded-xl px-8 py-4 md:py-8 text-center transition-colors ${isDragOver
-                                            ? 'border-primary-400 bg-primary-50'
-                                            : 'border-neutral-300 hover:border-neutral-400'
+                                            ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/50'
+                                            : 'border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-600'
                                             }`}
                                         onDragOver={handleDragOver}
                                         onDragLeave={handleDragLeave}
                                         onDrop={handleDrop}
                                     >
-                                        <div className="bg-accent-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                            <FileSpreadsheet className="h-8 w-8 text-accent-600" />
+                                        <div className="bg-accent-100 dark:bg-accent-800/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                            <FileSpreadsheet className="h-8 w-8 text-accent-600 dark:text-accent-300" />
                                         </div>
 
-                                        <h3 className="text-lg font-medium text-neutral-900 mb-2">
+                                        <h3 className="text-lg font-medium text-neutral-900 dark:text-dark-text-primary mb-2">
                                             Arrastra tu archivo Excel aquí
                                         </h3>
-                                        <p className="text-neutral-600 mb-4">
+                                        <p className="text-neutral-600 dark:text-dark-text-secondary mb-4">
                                             o haz clic para seleccionar
                                         </p>
 
@@ -493,16 +493,16 @@ const StudentsPage = () => {
                                 </>
                             ) : (
                                 <div>
-                                    <h3 className="text-lg font-medium text-neutral-900 mb-4">
+                                    <h3 className="text-lg font-medium text-neutral-900 dark:text-dark-text-primary mb-4">
                                         Archivo seleccionado
                                     </h3>
 
-                                    <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-6">
+                                    <div className="bg-success-50 dark:bg-success-900/50 border border-success-200 dark:border-success-800 rounded-lg p-4 mb-6">
                                         <div className="flex items-center space-x-3">
-                                            <FileSpreadsheet className="h-8 w-8 text-success-600" />
+                                            <FileSpreadsheet className="h-8 w-8 text-success-600 dark:text-success-300" />
                                             <div>
-                                                <p className="font-medium text-success-900">{selectedFile.name}</p>
-                                                <p className="text-sm text-success-700">
+                                                <p className="font-medium text-success-900 dark:text-success-200">{selectedFile.name}</p>
+                                                <p className="text-sm text-success-700 dark:text-success-400">
                                                     {(selectedFile.size / 1024).toFixed(1)} KB
                                                 </p>
                                             </div>
@@ -510,10 +510,10 @@ const StudentsPage = () => {
                                     </div>
 
                                     {isProcessing && (
-                                        <div className="bg-info-50 border border-info-200 rounded-lg p-4 mb-6">
+                                        <div className="bg-info-50 dark:bg-info-900/50 border border-info-200 dark:border-info-800 rounded-lg p-4 mb-6">
                                             <div className="flex items-center space-x-3">
                                                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-info-600 border-t-transparent"></div>
-                                                <span className="text-info-800 text-sm">Procesando archivo...</span>
+                                                <span className="text-info-800 dark:text-info-300 text-sm">Procesando archivo...</span>
                                             </div>
                                         </div>
                                     )}
@@ -521,7 +521,7 @@ const StudentsPage = () => {
                             )}
 
                             {/* Botones del modal */}
-                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100">
+                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100 dark:border-dark-border">
                                 <Button
                                     type="button"
                                     onClick={closeImportModal}
@@ -559,20 +559,20 @@ const StudentsPage = () => {
             {/* Modal para copiar estudiantes */}
             {isCopyModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100 dark:border-dark-border">
                             <div>
-                                <h2 className="text-xl font-bold text-neutral-900">
+                                <h2 className="text-xl font-bold text-neutral-900 dark:text-dark-text-primary">
                                     Copiar Estudiantes a Otra Aula
                                 </h2>
-                                <p className="text-sm text-neutral-600 mt-1">
+                                <p className="text-sm text-neutral-600 dark:text-dark-text-secondary mt-1">
                                     Selecciona el aula de destino para copiar todos los estudiantes.
                                 </p>
                             </div>
                             <button
                                 onClick={closeCopyModal}
-                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded-lg transition-colors"
                                 aria-label="Cerrar modal de copiar"
                                 disabled={isProcessing}
                             >
@@ -606,16 +606,16 @@ const StudentsPage = () => {
                             />
 
                             {isProcessing && (
-                                <div className="bg-info-50 border border-info-200 rounded-lg p-4">
+                                <div className="bg-info-50 dark:bg-info-900/50 border border-info-200 dark:border-info-800 rounded-lg p-4">
                                     <div className="flex items-center space-x-3">
                                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-info-600 border-t-transparent"></div>
-                                        <span className="text-info-800 text-sm">Copiando estudiantes...</span>
+                                        <span className="text-info-800 dark:text-info-300 text-sm">Copiando estudiantes...</span>
                                     </div>
                                 </div>
                             )}
 
                             {/* Botones de acción */}
-                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100">
+                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100 dark:border-dark-border">
                                 <Button
                                     type="button"
                                     onClick={closeCopyModal}
@@ -653,20 +653,20 @@ const StudentsPage = () => {
             {/* Modal para registrar nuevo estudiante */}
             {isRegisterModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
                         {/* Header del modal */}
-                        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+                        <div className="flex items-center justify-between p-6 border-b border-neutral-100 dark:border-dark-border">
                             <div>
-                                <h2 className="text-xl font-bold text-neutral-900">
+                                <h2 className="text-xl font-bold text-neutral-900 dark:text-dark-text-primary">
                                     Registrar Nuevo Estudiante
                                 </h2>
-                                <p className="text-sm text-neutral-600 mt-1">
+                                <p className="text-sm text-neutral-600 dark:text-dark-text-secondary mt-1">
                                     Ingresa el nombre completo del estudiante.
                                 </p>
                             </div>
                             <button
                                 onClick={closeRegisterModal}
-                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded-lg transition-colors"
                                 disabled={isProcessing}
                             >
                                 <X className="h-5 w-5" />
@@ -693,16 +693,16 @@ const StudentsPage = () => {
                             />
 
                             {isProcessing && (
-                                <div className="bg-info-50 border border-info-200 rounded-lg p-4">
+                                <div className="bg-info-50 dark:bg-info-900/50 border border-info-200 dark:border-info-800 rounded-lg p-4">
                                     <div className="flex items-center space-x-3">
                                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-info-600 border-t-transparent"></div>
-                                        <span className="text-info-800 text-sm">Registrando estudiante...</span>
+                                        <span className="text-info-800 dark:text-info-300 text-sm">Registrando estudiante...</span>
                                     </div>
                                 </div>
                             )}
 
                             {/* Botones de acción */}
-                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100">
+                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100 dark:border-dark-border">
                                 <Button
                                     type="button"
                                     onClick={closeRegisterModal}

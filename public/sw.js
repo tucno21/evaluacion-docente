@@ -7,10 +7,16 @@ const urlsToCache = [
     '/icons/icon-512x512.png',
     '/icons/icon-maskable-192x192.png',
     '/icons/icon-maskable-512x512.png',
-    // Add other assets that should be cached, e.g., CSS, JS, images
-    // '/src/index.css',
-    // '/src/main.tsx',
-    // '/src/App.tsx',
+    '/vite.svg',
+    '/cover.png',
+    '/src/index.css',
+    '/assets/index.js', // Ahora con nombres de archivo predecibles gracias a vite.config.ts
+    '/assets/index.css', // Ahora con nombres de archivo predecibles gracias a vite.config.ts
+    '/src/main.tsx', // Mantener si se usa directamente o si es un punto de entrada
+    '/src/App.tsx', // Mantener si se usa directamente o si es un punto de entrada
+    '/src/assets/react.svg',
+    // Agregue otros activos que deban ser cacheados, por ejemplo, otros componentes, páginas, etc.
+    // Para una PWA de producción, considere generar esta lista dinámicamente durante el proceso de build.
 ];
 
 self.addEventListener('install', (event) => {

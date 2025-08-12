@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ClipboardList } from 'lucide-react';
 import type { StudentEvaluation, AchievementLevel, ParticipationEvaluation, ParticipationLevel } from '../types/types';
@@ -45,6 +45,9 @@ const EvaluationPage = () => {
     } = useAppStore();
 
     const { setHeaderTitle } = useHeaderStore();
+
+    // Estado para manejar la fila seleccionada
+    const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
     const currentClassroom = useMemo(() => classrooms.find(c => c.id === classroomId), [classrooms, classroomId]);
     const currentMatrix = useMemo(() => evaluationMatrices.find(m => m.id === matrixId), [evaluationMatrices, matrixId]);
@@ -272,7 +275,7 @@ const EvaluationPage = () => {
             </div>
 
             {/* Contenedor con scroll horizontal */}
-            <div className="bg-white dark:bg-dark-bg-card border border-neutral-400 dark:border-neutral-700 cursor-pointer shadow-sm hover:shadow-md overflow-x-auto">
+            <div className="bg-white dark:bg-dark-bg-card border border-neutral-400 dark:border-neutral-700 shadow-sm hover:shadow-md overflow-x-auto">
                 <div className="min-w-full mb-2">
                     {/* Header */}
                     <div className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-400 dark:border-neutral-700 flex">
@@ -310,18 +313,31 @@ const EvaluationPage = () => {
 
                         const currentParticipationLevel = studentParticipation?.level || '';
 
+                        // Determinar si esta fila está seleccionada
+                        const isRowSelected = selectedStudentId === student.id;
+                        const rowClass = `flex hover:bg-neutral-50 dark:hover:bg-neutral-800/50 border-b border-neutral-400 dark:border-neutral-700 ${isRowSelected ? 'bg-blue-100 dark:bg-blue-900/30' : ''}`;
+                        const cellClass = isRowSelected ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-white dark:bg-dark-bg-card';
+
                         return (
-                            <div key={student.id} className="flex hover:bg-neutral-50 dark:hover:bg-neutral-800/50 border-b border-neutral-400 dark:border-neutral-700">
+                            <div
+                                key={student.id}
+                                className={rowClass}
+                            >
                                 {/* Número fijo */}
-                                <div className="w-8 border-r border-neutral-400 dark:border-neutral-700 p-2 text-center font-medium text-xs bg-white dark:bg-dark-bg-card sticky left-0 z-10 flex-shrink-0">
+                                <div
+                                    className={`w-8 border-r border-neutral-400 dark:border-neutral-700 p-2 text-center font-medium text-xs ${cellClass} sticky left-0 z-10 flex-shrink-0 cursor-pointer`}
+                                    onClick={() => setSelectedStudentId(student.id === selectedStudentId ? null : student.id)}
+                                >
                                     {studentIndex + 1}
                                 </div>
                                 {/* Nombre fijo */}
-                                <div className="w-40 border-r border-black dark:border-neutral-600 p-2 text-left font-medium text-[10px] bg-white dark:bg-dark-bg-card sticky left-8 z-10 flex-shrink-0">
+                                <div
+                                    className={`w-40 border-r border-black dark:border-neutral-600 p-2 text-left font-medium text-[10px] ${cellClass} sticky left-8 z-10 flex-shrink-0`}
+                                >
                                     <div className="truncate leading-tight text-neutral-800 dark:text-dark-text-primary">{student.fullName}</div>
                                 </div>
                                 {/* PARTICIPO Cell */}
-                                <div className="w-7 md:w-10 border-r border-black dark:border-neutral-600 bg-white dark:bg-dark-bg-card sticky left-8 z-0 flex-shrink-0">
+                                <div className={`w-7 md:w-10 border-r border-black dark:border-neutral-600 ${cellClass} sticky left-8 z-0 flex-shrink-0`}>
                                     <button
                                         className={`
                                             h-full w-full flex items-center justify-center text-xs font-bold
@@ -341,7 +357,7 @@ const EvaluationPage = () => {
                                         const currentLevel = criterionEvaluation?.level || '';
 
                                         return (
-                                            <div key={criterion.id} className="flex-1 min-w-20 border-r border-black dark:border-neutral-600 bg-white dark:bg-dark-bg-card">
+                                            <div key={criterion.id} className={`flex-1 min-w-20 border-r border-black dark:border-neutral-600 ${cellClass}`}>
                                                 <div className="grid grid-cols-4 h-8">
                                                     {['C', 'B', 'A', 'AD'].map((level) => {
                                                         const isSelected = currentLevel === level;

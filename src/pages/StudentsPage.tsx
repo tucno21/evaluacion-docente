@@ -3,33 +3,36 @@ import { Users, Download, Upload, X, FileSpreadsheet, Search } from 'lucide-reac
 import { generateExcelTemplate, parseExcelStudents } from '../utils/excel';
 import { saveAs } from 'file-saver';
 import { useAppStore } from '../store/useAppStore';
-import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
-import { getClassroomById, getAllClassrooms } from '../utils/indexDB';
 import { useHeaderStore } from '../store/useHeaderStore';
-import type { Classroom, Student } from '../types/types';
+import type { Student } from '../types/types';
+import type { GradeSection } from '../types/types';
 import ModalAlert from '../components/ModalAlert';
-import Inputs from '../components/Inputs'; // Import Inputs component
-import Select from '../components/Select'; // Import Select component
-import Button from '../components/Button'; // Import Button component
-import Toast from '../components/Toast'; // Import Toast component
-import { Trash2, UserPlus } from 'lucide-react';
+import Inputs from '../components/Inputs';
+import Button from '../components/Button';
+import Toast from '../components/Toast';
+import { Trash2, UserPlus, Edit } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { getAllGradeSections } from '../utils/indexDB';
 
 const StudentsPage = () => {
-    const { gradeId } = useParams<{ gradeId: string }>();
-    const classroomId = gradeId;
-    const navigate = useNavigate(); // Initialize useNavigate
-
-    const { students, loadStudentsByClassroom, addManyStudents, loadClassrooms, removeStudent, addStudent } = useAppStore();
+    const {
+        students,
+        gradeSections,
+        loadAllStudents,
+        loadGradeSections,
+        addManyStudents,
+        removeStudent,
+        addStudent,
+        updateExistingStudent,
+        addNewGradeSection,
+        getGradeSectionByName
+    } = useAppStore();
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-    const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedGradoSec, setSelectedGradoSec] = useState<string>('');
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [copyToClassroomId, setCopyToClassroomId] = useState<string>('');
-    const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
-    const [copyErrors, setCopyErrors] = useState<Record<string, string>>({});
     const { setHeaderTitle } = useHeaderStore();
 
     // State for Toast notifications
@@ -39,39 +42,49 @@ const StudentsPage = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
 
-    // State for register student modal
+    // State for register/edit student modal
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+    const [editingStudent, setEditingStudent] = useState<Student | null>(null);
     const [newStudentName, setNewStudentName] = useState('');
+    const [newStudentGradoSec, setNewStudentGradoSec] = useState('');
     const [registerErrors, setRegisterErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        loadClassrooms();
-        if (classroomId) {
-            loadStudentsByClassroom(classroomId);
-            const fetchClassroomAndClassrooms = async () => {
-                const fetchedClassroom = await getClassroomById(classroomId);
-                if (fetchedClassroom) {
-                    setHeaderTitle(`Estudiantes - ${fetchedClassroom.name} ${fetchedClassroom.grade}° ${fetchedClassroom.section}`);
-                } else {
-                    setHeaderTitle('Cargando aula...');
-                }
-                const classrooms = await getAllClassrooms();
-                setAllClassrooms(classrooms.filter(classroom => classroom.id !== classroomId));
-            };
-            fetchClassroomAndClassrooms();
-        }
-    }, [classroomId, loadStudentsByClassroom, loadClassrooms, setHeaderTitle]);
+        const fetchData = async () => {
+            // Cargar GradeSections y estudiantes
+            setHeaderTitle('Todos los Estudiantes');
+            await loadGradeSections();
+            await loadAllStudents();
+        };
+
+        fetchData();
+    }, [loadAllStudents, loadGradeSections, setHeaderTitle]);
+
+    // Get unique gradeSections from loaded gradeSections
+    const uniqueGradeSections = gradeSections.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Helper function to get gradeSection name from ID
+    const getGradeSectionName = (gradeSectionId: string) => {
+        const gradeSection = gradeSections.find(gs => gs.id === gradeSectionId);
+        return gradeSection ? gradeSection.name : 'Sin asignar';
+    };
 
     const sortedAndFilteredStudents = students
-        .filter(student =>
-            `${student.fullName}`.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        .filter(student => {
+            const gradeSectionName = getGradeSectionName(student.gradeSectionId);
+            const matchesGradoSec = !selectedGradoSec || gradeSectionName === selectedGradoSec;
+            const matchesSearch = `${student.fullName}`.toLowerCase().includes(searchTerm.toLowerCase());
+            return matchesGradoSec && matchesSearch;
+        })
         .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+    const handleFilterByGradoSec = (gradoSec: string) => {
+        setSelectedGradoSec(gradoSec === selectedGradoSec ? '' : gradoSec);
+    };
 
     const handleDownloadTemplate = () => {
         const excelBlob = generateExcelTemplate();
         saveAs(excelBlob, 'Plantilla_Estudiantes.xlsx');
-        console.log('Plantilla Excel descargada.');
     };
 
     const handleFileSelect = (file: File) => {
@@ -110,28 +123,83 @@ const StudentsPage = () => {
     };
 
     const handleImportStudents = async () => {
-        if (!selectedFile || !classroomId) {
-            setToast({ message: 'No se puede importar estudiantes sin un ID de aula válido.', type: 'error' });
+        if (!selectedFile) {
+            setToast({ message: 'Por favor selecciona un archivo Excel.', type: 'error' });
             return;
         }
 
         setIsProcessing(true);
 
         try {
-            const importedStudents = await parseExcelStudents(selectedFile);
+            const { students: importedStudents, uniqueGradeSecs: importedGradeSecNames } = await parseExcelStudents(selectedFile);
 
-            const studentsToSave = importedStudents.map(s => ({
-                ...s,
-                classroomId: classroomId,
-            }));
+            // Create GradeSections that don't exist
+            for (const gradeSecName of importedGradeSecNames) {
+                const existingGradeSection = await getGradeSectionByName(gradeSecName);
+                if (!existingGradeSection) {
+                    await addNewGradeSection({
+                        name: gradeSecName,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            }
 
-            console.log('Importing students with classroomId:', classroomId);
-            await addManyStudents(studentsToSave);
+            // Get gradeSections directly from indexDB instead of relying on Zustand state
+            const allGradeSections: GradeSection[] = await getAllGradeSections();
+
+            // Convert students to use gradeSectionId
+            const studentsWithGradeSectionIds = importedStudents.map(importedStudent => {
+                const gradeSection = allGradeSections.find(gs => gs.name === importedStudent.gradoSec);
+                return {
+                    fullName: importedStudent.fullName,
+                    gradeSectionId: gradeSection ? gradeSection.id : ''
+                };
+            });
+
+            // Check for duplicates by fullName and gradeSectionId
+            const duplicateCount = studentsWithGradeSectionIds.filter(imported => {
+                return students.some(existing => {
+                    const nameMatch = existing.fullName.trim().toLowerCase() === imported.fullName.trim().toLowerCase();
+                    const gradeSectionIdMatch = existing.gradeSectionId === imported.gradeSectionId;
+                    return nameMatch && gradeSectionIdMatch;
+                });
+            }).length;
+
+            // Filter out duplicates
+            const uniqueStudents = studentsWithGradeSectionIds.filter(imported => {
+                return !students.some(existing => {
+                    const nameMatch = existing.fullName.trim().toLowerCase() === imported.fullName.trim().toLowerCase();
+                    const gradeSectionIdMatch = existing.gradeSectionId === imported.gradeSectionId;
+                    return nameMatch && gradeSectionIdMatch;
+                });
+            });
+
+            if (duplicateCount > 0 && uniqueStudents.length === 0) {
+                setIsProcessing(false);
+                setToast({
+                    message: `Todos los estudiantes del archivo ya existen en la base de datos. No se importaron estudiantes duplicados.`,
+                    type: 'error'
+                });
+                closeImportModal();
+                return;
+            }
+
+            await addManyStudents(uniqueStudents);
 
             setIsProcessing(false);
             closeImportModal();
-            setToast({ message: `Se importaron ${studentsToSave.length} estudiantes correctamente.`, type: 'success' });
-            // No redirection after import, stay on the same view
+
+            if (duplicateCount > 0) {
+                setToast({
+                    message: `Se importaron ${uniqueStudents.length} estudiantes nuevos. ${duplicateCount} estudiantes ya existían y no se duplicaron.`,
+                    type: 'success'
+                });
+            } else {
+                setToast({ message: `Se importaron ${uniqueStudents.length} estudiantes correctamente.`, type: 'success' });
+            }
+
+            // Reload data
+            await loadAllStudents();
         } catch (error) {
             console.error('Error al importar estudiantes:', error);
             setToast({ message: 'Error al importar estudiantes: ' + error, type: 'error' });
@@ -143,46 +211,6 @@ const StudentsPage = () => {
         setIsImportModalOpen(false);
         setSelectedFile(null);
         setIsDragOver(false);
-        setIsProcessing(false);
-    };
-
-    const validateCopyForm = () => {
-        const newErrors: Record<string, string> = {};
-        if (!copyToClassroomId) {
-            newErrors.classroomId = 'Debe seleccionar un aula de destino';
-        }
-        setCopyErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleCopyStudents = async () => {
-        if (!validateCopyForm()) return;
-
-        setIsProcessing(true);
-
-        try {
-            const studentsToCopy: Student[] = students.map(student => ({
-                ...student,
-                id: uuidv4(),
-                classroomId: copyToClassroomId,
-            }));
-
-            await addManyStudents(studentsToCopy);
-            setIsProcessing(false);
-            closeCopyModal();
-            navigate(`/grade/${copyToClassroomId}/students`);
-            setToast({ message: 'Estudiantes copiados correctamente.', type: 'success' });
-        } catch (error) {
-            console.error('Error al copiar estudiantes:', error);
-            setToast({ message: 'Error al copiar estudiantes: ' + error, type: 'error' });
-            setIsProcessing(false);
-        }
-    };
-
-    const closeCopyModal = () => {
-        setIsCopyModalOpen(false);
-        setCopyToClassroomId('');
-        setCopyErrors({});
         setIsProcessing(false);
     };
 
@@ -210,42 +238,91 @@ const StudentsPage = () => {
         setStudentToDelete(null);
     };
 
-    // Register student functions
+    // Open edit modal
+    const handleEditStudent = (student: Student) => {
+        setEditingStudent(student);
+        setNewStudentName(student.fullName);
+        setNewStudentGradoSec(getGradeSectionName(student.gradeSectionId));
+        setRegisterErrors({});
+        setIsRegisterModalOpen(true);
+    };
+
+    // Register/Edit student functions
     const validateRegisterForm = () => {
         const newErrors: Record<string, string> = {};
         if (!newStudentName.trim()) {
             newErrors.fullName = 'El nombre del estudiante no puede estar vacío.';
+        }
+        if (!newStudentGradoSec.trim()) {
+            newErrors.gradeSection = 'El grado y sección son obligatorios.';
         }
         setRegisterErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleRegisterStudent = async () => {
-        if (!validateRegisterForm() || !classroomId) {
+        if (!validateRegisterForm()) {
             return;
         }
 
         setIsProcessing(true);
         try {
-            const newStudent: Student = {
-                id: uuidv4(),
-                fullName: newStudentName.trim(),
-                classroomId: classroomId,
-            };
-            await addStudent(newStudent);
-            setIsProcessing(false);
-            closeRegisterModal();
-            setToast({ message: `Estudiante ${newStudent.fullName} registrado correctamente.`, type: 'success' });
+            // Find or create GradeSection
+            let gradeSectionId = editingStudent ? editingStudent.gradeSectionId : '';
+
+            if (!editingStudent || newStudentGradoSec !== getGradeSectionName(editingStudent?.gradeSectionId || '')) {
+                const existingGradeSection = gradeSections.find(gs => gs.name === newStudentGradoSec.trim());
+                if (existingGradeSection) {
+                    gradeSectionId = existingGradeSection.id;
+                } else {
+                    const newGradeSectionId = await addNewGradeSection({
+                        name: newStudentGradoSec.trim(),
+                        createdAt: new Date().toISOString()
+                    });
+                    if (newGradeSectionId) {
+                        gradeSectionId = newGradeSectionId;
+                    }
+                }
+            }
+
+            if (editingStudent) {
+                // Update existing student
+                const updatedStudent: Student = {
+                    ...editingStudent,
+                    fullName: newStudentName.trim(),
+                    gradeSectionId: gradeSectionId,
+                };
+                await updateExistingStudent(updatedStudent);
+                setIsProcessing(false);
+                closeRegisterModal();
+                setToast({ message: `Estudiante ${updatedStudent.fullName} actualizado correctamente.`, type: 'success' });
+            } else {
+                // Create new student
+                const newStudent: Student = {
+                    id: uuidv4(),
+                    fullName: newStudentName.trim(),
+                    gradeSectionId: gradeSectionId,
+                };
+                await addStudent(newStudent);
+                setIsProcessing(false);
+                closeRegisterModal();
+                setToast({ message: `Estudiante ${newStudent.fullName} registrado correctamente.`, type: 'success' });
+            }
+
+            // Reload data
+            await loadAllStudents();
         } catch (error) {
-            console.error('Error al registrar estudiante:', error);
-            setToast({ message: 'Error al registrar estudiante: ' + error, type: 'error' });
+            console.error('Error al procesar estudiante:', error);
+            setToast({ message: 'Error al procesar estudiante: ' + error, type: 'error' });
             setIsProcessing(false);
         }
     };
 
     const closeRegisterModal = () => {
         setIsRegisterModalOpen(false);
+        setEditingStudent(null);
         setNewStudentName('');
+        setNewStudentGradoSec('');
         setRegisterErrors({});
         setIsProcessing(false);
     };
@@ -292,23 +369,56 @@ const StudentsPage = () => {
                         className="w-full pl-10 pr-4 py-3 border border-neutral-300 dark:border-dark-border rounded-xl focus:outline-none focus:ring focus:ring-primary-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-dark-bg-card text-neutral-800 dark:text-dark-text-primary placeholder-neutral-400 dark:placeholder-neutral-500"
                     />
                 </div>
+
+                {/* Botones de filtro por gradoSec */}
+                {uniqueGradeSections.length > 0 && (
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setSelectedGradoSec('')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${!selectedGradoSec
+                                ? 'bg-primary-600 text-white shadow-md'
+                                : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
+                                }`}
+                        >
+                            Todos
+                        </button>
+                        {uniqueGradeSections.map((gradeSection) => (
+                            <button
+                                key={gradeSection.id}
+                                onClick={() => handleFilterByGradoSec(gradeSection.name)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedGradoSec === gradeSection.name
+                                    ? 'bg-primary-600 text-white shadow-md'
+                                    : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
+                                    }`}
+                            >
+                                {gradeSection.name}
+                            </button>
+                        ))}
+                        {selectedGradoSec && (
+                            <button
+                                onClick={() => setSelectedGradoSec('')}
+                                className="px-4 py-2 rounded-lg text-sm font-medium bg-error-100 dark:bg-error-800/50 text-error-700 dark:text-error-300 hover:bg-error-200 dark:hover:bg-error-700 transition-all duration-200"
+                            >
+                                Limpiar filtro
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Lista de estudiantes */}
             <div className="mb-4">
-                {sortedAndFilteredStudents.length === 0 ? (
+                {students.length === 0 ? (
+                    // No hay estudiantes en la base de datos
                     <div className="text-center py-12 px-4 bg-bg-card dark:bg-dark-bg-card rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700">
                         <div className="bg-neutral-100 dark:bg-neutral-800 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                             <Users className="h-8 w-8 text-neutral-400 dark:text-neutral-500" />
                         </div>
                         <h3 className="text-lg font-medium text-neutral-900 dark:text-dark-text-primary mb-2">
-                            {searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes registrados'}
+                            No hay estudiantes registrados
                         </h3>
                         <p className="text-neutral-600 dark:text-dark-text-secondary mb-4">
-                            {searchTerm
-                                ? 'Intenta con otro término de búsqueda'
-                                : 'Importa estudiantes desde un archivo Excel o registra uno nuevo para comenzar.'
-                            }
+                            Importa estudiantes desde un archivo Excel o registra uno nuevo para comenzar.
                         </p>
                         <div className="flex justify-center space-x-4 mt-4">
                             <Button
@@ -327,6 +437,22 @@ const StudentsPage = () => {
                                 Registrar Estudiante
                             </Button>
                         </div>
+                    </div>
+                ) : sortedAndFilteredStudents.length === 0 ? (
+                    // No hay estudiantes que coincidan con el filtro
+                    <div className="text-center py-12 px-4 bg-bg-card dark:bg-dark-bg-card rounded-xl border border-neutral-200 dark:border-dark-border">
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                            <Users className="h-8 w-8 text-neutral-400 dark:text-neutral-500" />
+                        </div>
+                        <h3 className="text-lg font-medium text-neutral-900 dark:text-dark-text-primary mb-2">
+                            {searchTerm ? 'No se encontraron estudiantes' : (selectedGradoSec ? 'No hay estudiantes en esta sección' : 'Selecciona una sección para ver los estudiantes')}
+                        </h3>
+                        <p className="text-neutral-600 dark:text-dark-text-secondary mb-4">
+                            {searchTerm
+                                ? 'Intenta con otro término de búsqueda'
+                                : (selectedGradoSec ? 'Esta sección no tiene estudiantes registrados aún.' : 'Haz clic en "Todos" o en una sección específica arriba.')
+                            }
+                        </p>
                     </div>
                 ) : (
                     <div className="bg-bg-card dark:bg-dark-bg-card rounded-xl shadow-sm border border-neutral-200 dark:border-dark-border overflow-hidden">
@@ -352,12 +478,24 @@ const StudentsPage = () => {
                                                 <h3 className="text-base font-medium text-neutral-900 dark:text-dark-text-primary truncate">
                                                     {student.fullName}
                                                 </h3>
+                                                {student.gradeSectionId && (
+                                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                                                        {getGradeSectionName(student.gradeSectionId)}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex items-center space-x-3 flex-shrink-0 ml-4">
                                             <div className="bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-medium px-2 py-1 rounded-full">
                                                 #{String(index + 1).padStart(2, '0')}
                                             </div>
+                                            <button
+                                                onClick={() => handleEditStudent(student)}
+                                                className="text-primary-500 hover:text-primary-700 p-1 rounded-full hover:bg-primary-50 dark:hover:bg-primary-900/50 transition-colors"
+                                                aria-label={`Editar estudiante ${student.fullName}`}
+                                            >
+                                                <Edit className="h-5 w-5" />
+                                            </button>
                                             <button
                                                 onClick={() => handleDeleteStudent(student)}
                                                 className="text-error-500 hover:text-error-700 p-1 rounded-full hover:bg-error-50 dark:hover:bg-error-900/50 transition-colors"
@@ -374,20 +512,6 @@ const StudentsPage = () => {
                     </div>
                 )}
 
-                {/* Botón para Copiar Estudiantes - Visible solo si hay estudiantes */}
-                {sortedAndFilteredStudents.length > 0 && (
-                    <div className="flex justify-center">
-                        <div className="p-2 border-neutral-200 text-center mt-4">
-                            <Button
-                                onClick={() => setIsCopyModalOpen(true)}
-                                variant="info"
-                                className="flex items-center justify-center space-x-2 px-5 py-3 rounded-xl transition-colors duration-200 text-base font-medium shadow-sm hover:shadow-md"
-                            >
-                                <span>Copiar Estudiantes a otra Aula</span>
-                            </Button>
-                        </div>
-                    </div>
-                )}
             </div>
 
 
@@ -556,89 +680,6 @@ const StudentsPage = () => {
                 </div>
             )}
 
-            {/* Modal para copiar estudiantes */}
-            {isCopyModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
-                        {/* Header del modal */}
-                        <div className="flex items-center justify-between p-6 border-b border-neutral-100 dark:border-dark-border">
-                            <div>
-                                <h2 className="text-xl font-bold text-neutral-900 dark:text-dark-text-primary">
-                                    Copiar Estudiantes a Otra Aula
-                                </h2>
-                                <p className="text-sm text-neutral-600 dark:text-dark-text-secondary mt-1">
-                                    Selecciona el aula de destino para copiar todos los estudiantes.
-                                </p>
-                            </div>
-                            <button
-                                onClick={closeCopyModal}
-                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded-lg transition-colors"
-                                aria-label="Cerrar modal de copiar"
-                                disabled={isProcessing}
-                            >
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        {/* Formulario de copiar */}
-                        <div className="p-6 space-y-5">
-                            {/* Seleccionar Aula */}
-                            <Select
-                                label="Seleccionar Aula de Destino"
-                                id="copyToClassroom"
-                                value={copyToClassroomId}
-                                onChange={(e) => {
-                                    setCopyToClassroomId(e.target.value);
-                                    if (copyErrors.classroomId) {
-                                        setCopyErrors(prev => ({ ...prev, classroomId: '' }));
-                                    }
-                                }}
-                                error={copyErrors.classroomId}
-                                options={[
-                                    { value: '', label: '-- Selecciona un aula --' },
-                                    ...allClassrooms.map(classroom => ({
-                                        value: classroom.id,
-                                        label: `${classroom.name} - ${classroom.grade}° ${classroom.section}`
-                                    }))
-                                ]}
-                                disabled={isProcessing}
-                                selectClassName="focus:ring-primary-500"
-                            />
-
-                            {isProcessing && (
-                                <div className="bg-info-50 dark:bg-info-900/50 border border-info-200 dark:border-info-800 rounded-lg p-4">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-info-600 border-t-transparent"></div>
-                                        <span className="text-info-800 dark:text-info-300 text-sm">Copiando estudiantes...</span>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Botones de acción */}
-                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-neutral-100 dark:border-dark-border">
-                                <Button
-                                    type="button"
-                                    onClick={closeCopyModal}
-                                    variant="neutral"
-                                    className="w-full sm:flex-1 text-sm"
-                                    disabled={isProcessing}
-                                >
-                                    Cancelar
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={handleCopyStudents}
-                                    className="w-full sm:flex-1 text-sm"
-                                    disabled={isProcessing || !copyToClassroomId}
-                                >
-                                    Copiar Estudiantes
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Modal de confirmación de eliminación */}
             <ModalAlert
                 isOpen={isDeleteModalOpen}
@@ -658,10 +699,10 @@ const StudentsPage = () => {
                         <div className="flex items-center justify-between p-6 border-b border-neutral-100 dark:border-dark-border">
                             <div>
                                 <h2 className="text-xl font-bold text-neutral-900 dark:text-dark-text-primary">
-                                    Registrar Nuevo Estudiante
+                                    {editingStudent ? 'Editar Estudiante' : 'Registrar Nuevo Estudiante'}
                                 </h2>
                                 <p className="text-sm text-neutral-600 dark:text-dark-text-secondary mt-1">
-                                    Ingresa el nombre completo del estudiante.
+                                    {editingStudent ? 'Actualiza la información del estudiante.' : 'Ingresa el nombre completo del estudiante.'}
                                 </p>
                             </div>
                             <button
@@ -692,6 +733,19 @@ const StudentsPage = () => {
                                 inputClassName="focus:ring-primary-500"
                             />
 
+                            <Inputs
+                                label="Grado y Sección"
+                                id="newStudentGradoSec"
+                                type="text"
+                                value={newStudentGradoSec}
+                                onChange={(e) => {
+                                    setNewStudentGradoSec(e.target.value);
+                                }}
+                                placeholder="Ej: 1A, 2B, 3C"
+                                disabled={isProcessing}
+                                inputClassName="focus:ring-primary-500"
+                            />
+
                             {isProcessing && (
                                 <div className="bg-info-50 dark:bg-info-900/50 border border-info-200 dark:border-info-800 rounded-lg p-4">
                                     <div className="flex items-center space-x-3">
@@ -718,7 +772,7 @@ const StudentsPage = () => {
                                     className="w-full sm:flex-1 text-sm"
                                     disabled={isProcessing || !newStudentName.trim()}
                                 >
-                                    Registrar Estudiante
+                                    {editingStudent ? 'Actualizar Estudiante' : 'Registrar Estudiante'}
                                 </Button>
                             </div>
                         </div>

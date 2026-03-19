@@ -3,9 +3,9 @@ import { Users, Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, C
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
-import type { EvaluationMatrix, EvaluationCriterion, Classroom } from '../types/types'; // Added Classroom type
+import type { EvaluationMatrix, EvaluationCriterion, Classroom } from '../types/types';
 import { v4 as uuidv4 } from 'uuid';
-import { getClassroomById, getAllClassrooms } from '../utils/indexDB'; // Added getAllClassrooms
+import { getClassroomById, getAllClassrooms, getAllGradeSections } from '../utils/indexDB'; // Added getAllGradeSections
 import ModalAlert from '../components/ModalAlert'; // Import ModalAlert
 import Inputs from '../components/Inputs'; // Import Inputs component
 import Select from '../components/Select'; // Import Select component
@@ -18,11 +18,12 @@ const GradePage = () => {
     const navigate = useNavigate();
     const {
         evaluationMatrices,
+        students,
         loadMatricesByClassroom,
         addNewEvaluationMatrix,
         updateExistingMatrix,
         removeMatrix,
-        loadStudentsByClassroom,
+        loadAllStudents,
         loadEvaluationsByMatrix,
         loadParticipationEvaluationsByMatrix,
         getAllEvaluationMatrices, // Added to fetch all matrices for date range export
@@ -312,13 +313,13 @@ const GradePage = () => {
         setIsDownloadingExcel(true);
         setDownloadMessage('Generando Excel de Evaluación...');
         try {
-            const fetchedStudents = await loadStudentsByClassroom(matrix.classroomId);
+            await loadAllStudents();
             const fetchedStudentEvaluations = await loadEvaluationsByMatrix(matrix.id);
             const fetchedParticipationEvaluations = await loadParticipationEvaluationsByMatrix(matrix.id);
 
             const excelBlob = generateEvaluationExcel(
                 matrix,
-                fetchedStudents,
+                students,
                 fetchedStudentEvaluations,
                 fetchedParticipationEvaluations
             );
@@ -347,7 +348,7 @@ const GradePage = () => {
         setIsDownloadingExcel(true);
         setDownloadMessage(`Generando Excel de ${exportType === 'criterios' ? 'Criterios' : 'Participación'}...`);
         try {
-            const allStudents = await loadStudentsByClassroom(gradeId!); // Get students for current classroom
+            await loadAllStudents();
             const allMatrices = await getAllEvaluationMatrices(); // Get all matrices
             const allStudentEvals = await getAllStudentEvaluations(); // Get all student evaluations
             const allParticipationEvals = await getAllParticipationEvaluations(); // Get all participation evaluations
@@ -359,7 +360,7 @@ const GradePage = () => {
             if (exportType === 'criterios') {
                 excelBlob = await generateCriteriaExcel(
                     allMatrices.filter(m => m.classroomId === gradeId), // Filter matrices for current classroom
-                    allStudents,
+                    students,
                     allStudentEvals.filter(se => allMatrices.some(m => m.id === se.matrixId && m.classroomId === gradeId)), // Filter student evals for current classroom's matrices
                     allParticipationEvals.filter(pe => allMatrices.some(m => m.id === pe.matrixId && m.classroomId === gradeId)), // Filter participation evals for current classroom's matrices
                     start,
@@ -367,7 +368,7 @@ const GradePage = () => {
                 );
             } else if (exportType === 'participacion') {
                 excelBlob = generateParticipationExcel(
-                    allStudents,
+                    students,
                     allParticipationEvals.filter(pe => allMatrices.some(m => m.id === pe.matrixId && m.classroomId === gradeId)), // Filter participation evals for current classroom's matrices
                     allMatrices.filter(m => m.classroomId === gradeId), // Filter matrices for current classroom
                     start,
@@ -409,12 +410,16 @@ const GradePage = () => {
             const fetchClassroomAndClassrooms = async () => {
                 const fetchedClassroom = await getClassroomById(gradeId);
                 if (fetchedClassroom) {
-                    setHeaderTitle(`${fetchedClassroom.name} - ${fetchedClassroom.grade}° ${fetchedClassroom.section}`);
+                    const gradeSections = await getAllGradeSections();
+                    const gradeSection = gradeSections.find(gs => gs.id === fetchedClassroom.gradeSectionId);
+                    const gradeSectionName = gradeSection ? gradeSection.name : '';
+                    setHeaderTitle(`${fetchedClassroom.name} - ${gradeSectionName}`);
                 } else {
                     setHeaderTitle('Cargando aula...');
                 }
                 const classrooms = await getAllClassrooms();
                 setAllClassrooms(classrooms.filter(classroom => classroom.id !== gradeId)); // Exclude current classroom
+                await loadAllStudents();
             };
             fetchClassroomAndClassrooms();
         }
@@ -430,7 +435,7 @@ const GradePage = () => {
                         variant="neutral"
                     >
                         <Users className="h-4 w-4" />
-                        <span>Ver Estudiantes</span>
+                        <span>Estudiantes ({students.length})</span>
                     </Button>
                 </div>
 
@@ -784,7 +789,7 @@ const GradePage = () => {
                                     { value: '', label: '-- Selecciona un aula --' },
                                     ...allClassrooms.map(classroom => ({
                                         value: classroom.id,
-                                        label: `${classroom.name} - ${classroom.grade}° ${classroom.section}`
+                                        label: `${classroom.name} - ${classroom.gradeSectionId ? classroom.gradeSectionId : ''}`
                                     }))
                                 ]}
                             />

@@ -5,6 +5,7 @@ import type { Student, EvaluationMatrix, StudentEvaluation, ParticipationEvaluat
 
 interface ExcelStudent {
     nombreCompleto: string;
+    gradoSec?: string;
     [key: string]: string | undefined;
 }
 
@@ -477,40 +478,6 @@ export const generateCriteriaExcel = async (
 
         if (matricesForDate.length === 0) continue;
 
-        // For simplicity, if multiple matrices exist for the same date, we'll combine their criteria
-        // or pick the first one. The prompt implies "each sheet corresponds to a date",
-        // so we'll generate a sheet for each date, potentially combining data if multiple matrices exist.
-        // For now, let's assume one matrix per date for the structure, or pick the first one.
-        // A more robust solution might involve iterating through each matrix for the date.
-        // Given the prompt "cada hoja del archivo corresponde a una fecha encontrada en la base de datos",
-        // it implies a single sheet per date, summarizing evaluations for that date.
-        // Let's create a sheet for each matrix on that date, or combine them if the user wants.
-        // For now, I'll create a sheet for each matrix that falls within the date range.
-        // The prompt says "cada hoja del archivo corresponde a una fecha encontrada en la base de datos",
-        // which implies one sheet per date, not per matrix.
-        // Let's refine this: group evaluations by date, then generate a single sheet for each date.
-
-        // To simplify, let's generate a sheet for each matrix that falls within the date range.
-        // This aligns better with the existing generateEvaluationExcel structure.
-        // The prompt says "cada hoja del archivo corresponde a una fecha encontrada en la base de datos".
-        // This means if there are multiple matrices on the same date, they should probably be on the same sheet.
-        // This requires a more complex aggregation.
-
-        // Let's re-interpret: "cada hoja del archivo corresponde a una fecha encontrada en la base de datos"
-        // means we iterate through unique dates. For each unique date, we create a sheet.
-        // On that sheet, we list all evaluations that occurred on that specific date.
-        // This means the header will be dynamic based on the criteria of all matrices on that date.
-
-        // This is more complex than just calling generateEvaluationExcel for each matrix.
-        // Let's stick to the simpler interpretation first: generate a sheet for each *matrix* that falls within the date range.
-        // This is closer to the existing `generateEvaluationExcel` function.
-        // If the user wants a single sheet per date with aggregated criteria, that's a larger refactor.
-
-        // Let's create a new function that takes a single matrix and generates a sheet,
-        // and then call it for each matrix within the date range.
-        // The existing `generateEvaluationExcel` already does this.
-        // So, we just need to filter the matrices and call `generateEvaluationExcel` for each.
-
         for (const matrix of matricesForDate) {
             const ws_data: any[][] = [];
 
@@ -776,7 +743,10 @@ export const generateCriteriaExcel = async (
 };
 
 // Function to parse Excel file and extract students
-export const parseExcelStudents = (file: File): Promise<Omit<Student, 'id'>[]> => {
+export const parseExcelStudents = (file: File): Promise<{
+    students: Array<{ fullName: string; gradoSec: string }>;
+    uniqueGradeSecs: Set<string>;
+}> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
@@ -785,24 +755,58 @@ export const parseExcelStudents = (file: File): Promise<Omit<Student, 'id'>[]> =
                 const data = e.target?.result;
                 const workbook = XLSX.read(data, { type: 'binary' });
 
-                // Get the first worksheet
+                // Get first worksheet
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
 
-                // Convert the worksheet to JSON
+                // Convert worksheet to JSON
                 const jsonData = XLSX.utils.sheet_to_json<ExcelStudent>(worksheet);
 
-                // Map the Excel data to our Student type
-                const students: Omit<Student, 'id'>[] = jsonData.map((row) => {
-                    const fullName = row.nombreCompleto || '';
+                if (jsonData.length === 0) {
+                    reject(new Error('El archivo Excel está vacío.'));
+                    return;
+                }
+
+                // Validate that all students have required fields
+                const missingGradoSecStudents: string[] = [];
+
+                for (let i = 0; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    if (!row.nombreCompleto || !row.nombreCompleto.trim()) {
+                        reject(new Error(`Fila ${i + 2}: El nombre completo (nombreCompleto) es obligatorio.`));
+                        return;
+                    }
+                    if (!row.gradoSec?.trim()) {
+                        missingGradoSecStudents.push(row.nombreCompleto);
+                    }
+                }
+
+                // Check if any students are missing gradoSec
+                if (missingGradoSecStudents.length > 0) {
+                    reject(new Error(
+                        `${missingGradoSecStudents.length} estudiante(s) sin grado y sección: ${missingGradoSecStudents.slice(0, 3).join(', ')}${missingGradoSecStudents.length > 3 ? '...' : ''}. El campo gradoSec es obligatorio.`
+                    ));
+                    return;
+                }
+
+                // Map Excel data to our Student type (with gradoSec temporarily)
+                const students = jsonData.map((row) => {
+                    const fullName = row.nombreCompleto.trim();
+                    const gradoSec = row.gradoSec?.trim() || '';
 
                     return {
-                        classroomId: '', // This will be set by the component that calls this function
-                        fullName: fullName
+                        fullName: fullName,
+                        gradoSec: gradoSec
                     };
                 });
 
-                resolve(students);
+                // Extract unique gradoSec values
+                const uniqueGradeSecs = new Set(students.map(s => s.gradoSec));
+
+                resolve({
+                    students,
+                    uniqueGradeSecs
+                });
             } catch (error) {
                 reject(new Error('Error parsing Excel file: ' + error));
             }
@@ -812,7 +816,7 @@ export const parseExcelStudents = (file: File): Promise<Omit<Student, 'id'>[]> =
             reject(new Error('Error reading file'));
         };
 
-        // Read the file as binary
+        // Read file as binary
         reader.readAsBinaryString(file);
     });
 };
@@ -822,31 +826,34 @@ export const generateExcelTemplate = (): Blob => {
     // Create a new workbook and worksheet
     const wb = XLSX.utils.book_new();
 
-    // Sample data for the template
+    // Sample data for template
     const sampleData = [
-        { nombreCompleto: 'Pérez, Juan' },
-        { nombreCompleto: 'González, María' },
+        { nombreCompleto: 'Pérez, Juan', gradoSec: '1A' },
+        { nombreCompleto: 'González, María', gradoSec: '1B' },
     ];
 
-    // Create the worksheet
+    // Create worksheet
     const ws = XLSX.utils.json_to_sheet(sampleData);
 
-    // Set column width for 'nombreCompleto'
-    ws['!cols'] = [{ wch: 50 }]; // Set width to 30 characters
+    // Set column width
+    ws['!cols'] = [
+        { wch: 50 }, // nombreCompleto
+        { wch: 15 }  // gradoSec
+    ];
 
-    // Add the worksheet to the workbook
+    // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Estudiantes');
 
-    // Generate the Excel file as a blob
+    // Generate Excel file as a blob
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
 
-    // Convert the binary string to an ArrayBuffer
+    // Convert binary string to an ArrayBuffer
     const buf = new ArrayBuffer(wbout.length);
     const view = new Uint8Array(buf);
     for (let i = 0; i < wbout.length; i++) {
         view[i] = wbout.charCodeAt(i) & 0xFF;
     }
 
-    // Create a Blob from the ArrayBuffer
+    // Create a Blob from ArrayBuffer
     return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 };

@@ -1,19 +1,25 @@
 import { create } from 'zustand';
 import type {
+    GradeSection,
     Classroom,
     Student,
     EvaluationMatrix,
     StudentEvaluation,
-    ParticipationEvaluation, // New import
+    ParticipationEvaluation,
 } from '../types/types';
 import {
+    addGradeSection,
+    getAllGradeSections,
+    getGradeSectionByName,
+    updateGradeSection,
+    deleteGradeSection,
     addClassroom,
     getAllClassrooms,
     updateClassroom,
     deleteClassroom,
     addStudent,
     addMultipleStudents,
-    getStudentsByClassroomId,
+    getAllStudents,
     updateStudent,
     deleteStudent,
     addEvaluationMatrix,
@@ -24,20 +30,20 @@ import {
     getEvaluationsByMatrixId,
     updateStudentEvaluation,
     getStudentEvaluationByMatrixAndStudent,
-    // New imports for participation
     addParticipationEvaluation,
     getParticipationEvaluationsByMatrixId,
     updateParticipationEvaluation,
     getParticipationEvaluationByMatrixAndStudent,
-    getAllEvaluationMatrices, // New import
-    getAllStudentEvaluations, // New import
-    getAllParticipationEvaluations, // New import
+    getAllEvaluationMatrices,
+    getAllStudentEvaluations,
+    getAllParticipationEvaluations,
     backupDatabase,
     restoreDatabase,
     checkIfDataExists
 } from '../utils/indexDB';
 
 interface AppState {
+    gradeSections: GradeSection[];
     classrooms: Classroom[];
     students: Student[];
     evaluationMatrices: EvaluationMatrix[];
@@ -46,6 +52,13 @@ interface AppState {
     loading: boolean;
     error: string | null;
 
+    // GradeSection actions
+    loadGradeSections: () => Promise<void>;
+    addNewGradeSection: (gradeSection: Omit<GradeSection, 'id'>) => Promise<string | undefined>;
+    getGradeSectionByName: (name: string) => Promise<GradeSection | undefined>;
+    updateExistingGradeSection: (gradeSection: GradeSection) => Promise<void>;
+    deleteGradeSection: (id: string) => Promise<void>;
+
     // Classroom actions
     loadClassrooms: () => Promise<void>;
     addNewClassroom: (classroom: Omit<Classroom, 'id'>) => Promise<string | undefined>;
@@ -53,11 +66,12 @@ interface AppState {
     deleteClassroom: (id: string) => Promise<void>;
 
     // Student actions
-    loadStudentsByClassroom: (classroomId: string) => Promise<Student[]>;
+    loadAllStudents: () => Promise<void>;
     addStudent: (student: Omit<Student, 'id'>) => Promise<string | undefined>;
     addManyStudents: (students: Omit<Student, 'id'>[]) => Promise<string[] | undefined>;
     updateExistingStudent: (student: Student) => Promise<void>;
     removeStudent: (id: string) => Promise<void>;
+    repairStudentsGradeSections: () => Promise<number>; // New function to repair students without gradeSectionId
 
     // Evaluation Matrix actions
     loadMatricesByClassroom: (classroomId: string) => Promise<void>;
@@ -90,6 +104,7 @@ interface AppState {
 
 
 export const useAppStore = create<AppState>((set, _get) => ({
+    gradeSections: [],
     classrooms: [],
     students: [],
     evaluationMatrices: [],
@@ -97,6 +112,66 @@ export const useAppStore = create<AppState>((set, _get) => ({
     participationEvaluations: [],
     loading: false,
     error: null,
+
+    // ===== GradeSection actions =====
+    loadGradeSections: async () => {
+        set({ loading: true, error: null });
+        try {
+            const data = await getAllGradeSections();
+            set({ gradeSections: data, loading: false });
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
+        }
+    },
+    addNewGradeSection: async (gradeSection) => {
+        try {
+            const id = await addGradeSection(gradeSection);
+            if (id) {
+                const newGradeSection = { ...gradeSection, id };
+                set((state) => ({
+                    gradeSections: [...state.gradeSections, newGradeSection],
+                    error: null,
+                }));
+                return id;
+            }
+        } catch (error: any) {
+            set({ error: error.message });
+        }
+        return undefined;
+    },
+    getGradeSectionByName: async (name) => {
+        try {
+            const gradeSection = await getGradeSectionByName(name);
+            return gradeSection;
+        } catch (error: any) {
+            set({ error: error.message });
+        }
+        return undefined;
+    },
+    updateExistingGradeSection: async (gradeSection) => {
+        try {
+            await updateGradeSection(gradeSection);
+            set((state) => ({
+                gradeSections: state.gradeSections.map((gs) =>
+                    gs.id === gradeSection.id ? gradeSection : gs
+                ),
+                error: null,
+            }));
+        } catch (error: any) {
+            set({ error: error.message });
+        }
+    },
+    deleteGradeSection: async (id) => {
+        try {
+            await deleteGradeSection(id);
+            set((state) => ({
+                gradeSections: state.gradeSections.filter((gs) => gs.id !== id),
+                error: null,
+            }));
+        } catch (error: any) {
+            set({ error: error.message });
+        }
+    },
 
     // ===== Classroom actions =====
     // Mantenemos 'loading' para cargas masivas
@@ -152,15 +227,13 @@ export const useAppStore = create<AppState>((set, _get) => ({
     },
 
     // ===== Student actions =====
-    loadStudentsByClassroom: async (classroomId) => {
+    loadAllStudents: async () => {
         set({ loading: true, error: null });
         try {
-            const data = await getStudentsByClassroomId(classroomId);
+            const data = await getAllStudents();
             set({ students: data, loading: false });
-            return data; // Return the fetched data
         } catch (error: any) {
             set({ error: error.message, loading: false });
-            return []; // Return empty array on error
         }
     },
     addStudent: async (student) => {
@@ -220,6 +293,56 @@ export const useAppStore = create<AppState>((set, _get) => ({
             }));
         } catch (error: any) {
             set({ error: error.message });
+        }
+    },
+    repairStudentsGradeSections: async () => {
+        set({ loading: true, error: null });
+        try {
+            const allStudents = await getAllStudents();
+            const allGradeSections = await getAllGradeSections();
+
+            let repairedCount = 0;
+            const updatedStudents: Student[] = [];
+
+            for (const student of allStudents) {
+                // Si el estudiante no tiene gradeSectionId, intentamos asignar uno
+                if (!student.gradeSectionId || student.gradeSectionId === '') {
+                    // Intentamos encontrar un GradeSection que coincida parcialmente con el nombre
+                    // Por ejemplo, si el estudiante se llamó "Juan Pérez 1A", extraemos "1A"
+                    const match = student.fullName.match(/\b(\d+[A-Z])\b/i);
+                    if (match) {
+                        const gradeSectionName = match[1].toUpperCase();
+                        const gradeSection = allGradeSections.find(gs => gs.name === gradeSectionName);
+
+                        if (gradeSection) {
+                            await updateStudent({
+                                ...student,
+                                gradeSectionId: gradeSection.id
+                            });
+
+                            updatedStudents.push({
+                                ...student,
+                                gradeSectionId: gradeSection.id
+                            });
+                            repairedCount++;
+                        }
+                    }
+                } else {
+                    updatedStudents.push(student);
+                }
+            }
+
+            // Actualizamos el estado local
+            set(() => ({
+                students: updatedStudents,
+                loading: false,
+                error: null
+            }));
+
+            return repairedCount;
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
+            return 0;
         }
     },
 

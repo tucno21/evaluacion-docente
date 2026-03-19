@@ -1,15 +1,16 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Classroom, Student, EvaluationMatrix, StudentEvaluation, ParticipationEvaluation } from "../types/types";
+import type { Classroom, Student, EvaluationMatrix, StudentEvaluation, ParticipationEvaluation, GradeSection } from "../types/types";
 
 // IndexedDB configuration
 const DB_NAME = 'teacher-evaluation-app';
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 const STORES = {
+    gradeSections: 'gradeSections',
     classrooms: 'classrooms',
     students: 'students',
     evaluationMatrices: 'evaluationMatrices',
     studentEvaluations: 'studentEvaluations',
-    participationEvaluations: 'participationEvaluations' // New store
+    participationEvaluations: 'participationEvaluations'
 };
 
 // Initialize the database
@@ -28,30 +29,41 @@ export const initDB = (): Promise<IDBDatabase> => {
         request.onupgradeneeded = (event) => {
             const db = (event.target as IDBOpenDBRequest).result;
 
-            // Create object stores if they don't exist
+            // Create gradeSections store
+            if (!db.objectStoreNames.contains(STORES.gradeSections)) {
+                const gradeSectionStore = db.createObjectStore(STORES.gradeSections, { keyPath: 'id' });
+                gradeSectionStore.createIndex('name', 'name', { unique: true });
+            }
+
+            // Create classrooms store with gradeSectionId
             if (!db.objectStoreNames.contains(STORES.classrooms)) {
                 const classroomStore = db.createObjectStore(STORES.classrooms, { keyPath: 'id' });
                 classroomStore.createIndex('name', 'name', { unique: false });
+                classroomStore.createIndex('gradeSectionId', 'gradeSectionId', { unique: false });
             }
 
+            // Create students store with gradeSectionId
             if (!db.objectStoreNames.contains(STORES.students)) {
                 const studentStore = db.createObjectStore(STORES.students, { keyPath: 'id' });
-                studentStore.createIndex('classroomId', 'classroomId', { unique: false });
+                studentStore.createIndex('fullName', 'fullName', { unique: false });
+                studentStore.createIndex('gradeSectionId', 'gradeSectionId', { unique: false });
             }
 
+            // Create evaluationMatrices store
             if (!db.objectStoreNames.contains(STORES.evaluationMatrices)) {
                 const matricesStore = db.createObjectStore(STORES.evaluationMatrices, { keyPath: 'id' });
                 matricesStore.createIndex('classroomId', 'classroomId', { unique: false });
                 matricesStore.createIndex('name', 'name', { unique: false });
             }
 
+            // Create studentEvaluations store
             if (!db.objectStoreNames.contains(STORES.studentEvaluations)) {
                 const evaluationsStore = db.createObjectStore(STORES.studentEvaluations, { keyPath: 'id' });
                 evaluationsStore.createIndex('matrixId', 'matrixId', { unique: false });
                 evaluationsStore.createIndex('studentId', 'studentId', { unique: false });
             }
 
-            // New store for participation evaluations
+            // Create participationEvaluations store
             if (!db.objectStoreNames.contains(STORES.participationEvaluations)) {
                 const participationStore = db.createObjectStore(STORES.participationEvaluations, { keyPath: 'id' });
                 participationStore.createIndex('matrixId', 'matrixId', { unique: false });
@@ -230,6 +242,53 @@ export const getItemsByIndex = <T>(
     });
 };
 
+// GradeSection-specific functions
+export const addGradeSection = (gradeSection: Omit<GradeSection, 'id'>): Promise<string> => {
+    return addItem<GradeSection>(STORES.gradeSections, gradeSection as GradeSection);
+};
+
+export const getAllGradeSections = (): Promise<GradeSection[]> => {
+    return getAllItems<GradeSection>(STORES.gradeSections);
+};
+
+export const getGradeSectionById = (id: string): Promise<GradeSection | undefined> => {
+    return getItemById<GradeSection>(STORES.gradeSections, id);
+};
+
+export const getGradeSectionByName = (name: string): Promise<GradeSection | undefined> => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const db = await initDB();
+            const tx = db.transaction(STORES.gradeSections, 'readonly');
+            const store = tx.objectStore(STORES.gradeSections);
+            const index = store.index('name');
+            const request = index.get(name);
+
+            request.onsuccess = () => {
+                resolve(request.result as GradeSection);
+            };
+
+            request.onerror = () => {
+                reject(request.error);
+            };
+
+            tx.oncomplete = () => {
+                db.close();
+            };
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+export const updateGradeSection = (gradeSection: GradeSection): Promise<void> => {
+    return updateItem<GradeSection>(STORES.gradeSections, gradeSection);
+};
+
+export const deleteGradeSection = (id: string): Promise<void> => {
+    return deleteItem(STORES.gradeSections, id);
+};
+
 // Classroom-specific functions
 export const addClassroom = (classroom: Omit<Classroom, 'id'>): Promise<string> => {
     return addItem<Classroom>(STORES.classrooms, classroom as Classroom);
@@ -267,8 +326,8 @@ export const addMultipleStudents = async (students: Omit<Student, 'id'>[]): Prom
     return ids;
 };
 
-export const getStudentsByClassroomId = (classroomId: string): Promise<Student[]> => {
-    return getItemsByIndex<Student>(STORES.students, 'classroomId', classroomId);
+export const getAllStudents = (): Promise<Student[]> => {
+    return getAllItems<Student>(STORES.students);
 };
 
 export const updateStudent = (student: Student): Promise<void> => {

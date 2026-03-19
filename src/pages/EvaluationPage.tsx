@@ -1,25 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ClipboardList } from 'lucide-react';
-import type { StudentEvaluation, AchievementLevel, ParticipationEvaluation, ParticipationLevel } from '../types/types';
+import type { StudentEvaluation, AchievementLevel, ParticipationEvaluation, ParticipationLevel, GradeSection } from '../types/types';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
-import BarChartCanvas from '../components/BarChartCanvas'; // Import the new component
+import { getAllGradeSections } from '../utils/indexDB';
+import BarChartCanvas from '../components/BarChartCanvas';
 
 const EvaluationPage = () => {
-    // --- INICIO: Herramientas de depuración ---
-    const renderCount = useRef(1);
-    useEffect(() => {
-        // Este log se mostrará en cada renderización, permitiéndote contar cuántas veces ocurre.
-        console.log(`[DEBUG] Componente renderizado: ${renderCount.current} veces.`);
-        renderCount.current += 1;
-    });
-
-    useEffect(() => {
-        // Este log se mostrará UNA SOLA VEZ cuando el componente se "monta".
-        console.log("[DEBUG] El componente EvaluationPage se ha montado.");
-    }, []);
-    // --- FIN: Herramientas de depuración ---
 
     const { classroomId: classroomIdParam, matrixId: matrixIdParam } = useParams<{ classroomId: string; matrixId: string }>();
     const classroomId = classroomIdParam || '';
@@ -29,7 +17,7 @@ const EvaluationPage = () => {
         classrooms,
         loadClassrooms,
         students,
-        loadStudentsByClassroom,
+        loadAllStudents,
         evaluationMatrices,
         loadMatricesByClassroom,
         studentEvaluations,
@@ -48,14 +36,20 @@ const EvaluationPage = () => {
 
     // Estado para manejar la fila seleccionada
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+    const [gradeSections, setGradeSections] = useState<GradeSection[]>([]);
 
     const currentClassroom = useMemo(() => classrooms.find(c => c.id === classroomId), [classrooms, classroomId]);
     const currentMatrix = useMemo(() => evaluationMatrices.find(m => m.id === matrixId), [evaluationMatrices, matrixId]);
 
+    // Helper function para obtener el nombre del GradeSection
+    const getGradeSectionName = (gradeSectionId: string) => {
+        const gradeSection = gradeSections.find(gs => gs.id === gradeSectionId);
+        return gradeSection ? gradeSection.name : '';
+    };
+
     // EFECTO CONSOLIDADO PARA CARGA DE DATOS
     // Este efecto se encarga de toda la carga de datos inicial.
     useEffect(() => {
-        console.log("[DEBUG] Ejecutando efecto de carga de datos...");
         loadClassrooms();
 
         if (classroomId) {
@@ -66,11 +60,11 @@ const EvaluationPage = () => {
             loadParticipationEvaluationsByMatrix(matrixId);
         }
 
-        // Se ha añadido `currentMatrix?.classroomId` como dependencia directa
-        // para la carga de estudiantes, en lugar de un segundo `useEffect`.
-        if (currentMatrix?.classroomId) {
-            loadStudentsByClassroom(currentMatrix.classroomId);
-        }
+        // Cargar todos los estudiantes al montar el componente
+        loadAllStudents();
+
+        // Cargar GradeSections
+        getAllGradeSections().then(setGradeSections);
 
         // Las funciones de carga del store de Zustand suelen ser estables.
         // Si no lo son, deberían envolverse en `useCallback` en la definición del store.
@@ -94,14 +88,14 @@ const EvaluationPage = () => {
     // Calculamos los datos para la vista directamente desde el store.
     // `useMemo` asegura que este cálculo complejo solo se ejecute cuando los datos relevantes cambian.
     const sortedStudents = useMemo(() => {
+        // Filtramos estudiantes por el gradeSectionId del Classroom actual
+        const filteredStudents = students.filter(student => student.gradeSectionId === currentClassroom?.gradeSectionId);
         // Clonamos el array para no mutar el estado original y lo ordenamos
-        return [...students].sort((a, b) => a.fullName.localeCompare(b.fullName));
-    }, [students]);
+        return [...filteredStudents].sort((a, b) => a.fullName.localeCompare(b.fullName));
+    }, [students, currentClassroom]);
 
     const memoizedEvaluations = useMemo(() => {
         if (!currentMatrix || sortedStudents.length === 0) return [];
-
-        console.log("[DEBUG] Recalculando `memoizedEvaluations`.");
         return sortedStudents.map(student => {
             const existingEvaluation = studentEvaluations.find(se => se.studentId === student.id && se.matrixId === matrixId);
             const mergedCriteriaEvaluations = currentMatrix.criteria.map(criterion => {
@@ -124,7 +118,6 @@ const EvaluationPage = () => {
     const memoizedParticipations = useMemo(() => {
         if (sortedStudents.length === 0) return [];
 
-        console.log("[DEBUG] Recalculando `memoizedParticipations`.");
         return sortedStudents.map(student => {
             const existingParticipation = participationEvaluations.find(pe => pe.studentId === student.id && pe.matrixId === matrixId);
             return existingParticipation || {
@@ -268,7 +261,7 @@ const EvaluationPage = () => {
                             {currentMatrix?.name || 'Evaluación'}
                         </h2>
                         <p className="text-xs text-neutral-600 dark:text-dark-text-secondary mt-0.5">
-                            {currentClassroom.name} {currentClassroom.grade}-{currentClassroom.section}
+                            {currentClassroom.name} {getGradeSectionName(currentClassroom.gradeSectionId)}
                         </p>
                     </div>
                 </div>

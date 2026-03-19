@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, ArrowLeft, Home, DatabaseBackup, HelpCircle, Sun, Moon } from 'lucide-react';
+import { BookOpen, ArrowLeft, Home, DatabaseBackup, HelpCircle, Sun, Moon, Users } from 'lucide-react';
 import { useHeaderStore } from '../store/useHeaderStore';
 
 const MainLayout = () => {
@@ -41,6 +41,17 @@ const MainLayout = () => {
 
     const handleHelp = () => {
         navigate('/help');
+    };
+
+    const handleStudents = () => {
+        // If on grade page, navigate to students page for that classroom
+        const match = location.pathname.match(/\/grade\/([^\/]+)/);
+        if (match && match[1]) {
+            navigate(`/grade/${match[1]}/students`);
+        } else {
+            // If on home page, navigate to all students page
+            navigate('/students');
+        }
     };
 
     const toggleTheme = () => {
@@ -94,6 +105,17 @@ const MainLayout = () => {
                                     title="Volver al inicio"
                                 >
                                     <Home className="h-5 w-5 text-white" />
+                                </button>
+                            )}
+                            {/* Botón Estudiantes - Visible en HomePage */}
+                            {location.pathname === '/' && (
+                                <button
+                                    onClick={handleStudents}
+                                    className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/30"
+                                    aria-label="Estudiantes"
+                                    title="Ver todos los estudiantes"
+                                >
+                                    <Users className="h-5 w-5 text-white" />
                                 </button>
                             )}
                             {/* Botón para backup */}

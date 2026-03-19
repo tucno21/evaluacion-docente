@@ -1,17 +1,22 @@
 // src/lib/types.ts
 // src/lib/types.ts
+export interface GradeSection {
+    id: string;
+    name: string;
+    createdAt: string;
+}
+
 export interface Classroom {
     id: string;
     name: string;
-    grade: string;
-    section: string;
+    gradeSectionId: string;
     createdAt: string;
 }
 
 export interface Student {
     id: string;
-    classroomId: string;
     fullName: string;
+    gradeSectionId: string;
 }
 
 export interface EvaluationCriterion {

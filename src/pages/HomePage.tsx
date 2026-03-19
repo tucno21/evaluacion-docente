@@ -4,8 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import type { Classroom } from '../types/types';
 import ModalAlert from '../components/ModalAlert';
-import Inputs from '../components/Inputs'; // Import Inputs component
+import Inputs from '../components/Inputs';
 import Button from '../components/Button';
+import Select from '../components/Select';
+
+const SUBJECT_OPTIONS = [
+    { value: '', label: 'Seleccione un área' },
+    { value: 'Matemática', label: 'Matemática' },
+    { value: 'Comunicación', label: 'Comunicación' },
+    { value: 'Inglés', label: 'Inglés' },
+    { value: 'Arte y Cultura', label: 'Arte y Cultura' },
+    { value: 'Ciencias Sociales', label: 'Ciencias Sociales' },
+    { value: 'Desarrollo Personal, Ciudadanía y Cívica', label: 'Desarrollo Personal, Ciudadanía y Cívica' },
+    { value: 'Educación Física', label: 'Educación Física' },
+    { value: 'Educación Religiosa', label: 'Educación Religiosa' },
+    { value: 'Ciencia y Tecnología', label: 'Ciencia y Tecnología' },
+    { value: 'Educación para el Trabajo', label: 'Educación para el Trabajo' },
+    { value: 'Quechua', label: 'Quechua' }
+];
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -26,8 +42,6 @@ const HomePage = () => {
 
         if (!formData.name.trim()) {
             newErrors.name = 'El nombre del aula es obligatorio';
-        } else if (formData.name.trim().length < 3) {
-            newErrors.name = 'El nombre debe tener al menos 3 caracteres';
         }
 
         if (!formData.grade.trim()) {
@@ -227,15 +241,14 @@ const HomePage = () => {
                         {/* Formulario */}
                         <div className="p-6 space-y-5">
                             {/* Nombre del aula */}
-                            <Inputs
+                            <Select
                                 label="Nombre del Aula"
                                 id="classroomName"
-                                type="text"
+                                options={SUBJECT_OPTIONS}
                                 value={formData.name}
                                 onChange={(e) => handleInputChange('name', e.target.value)}
-                                placeholder="Ej: Matemáticas 1°A"
                                 error={errors.name}
-                                inputClassName="focus:ring-primary-500"
+                                selectClassName="focus:ring-primary-500"
                             />
 
                             {/* Grado y Sección en fila */}

@@ -72,14 +72,14 @@ const StudentsPage = () => {
     const sortedAndFilteredStudents = students
         .filter(student => {
             const gradeSectionName = getGradeSectionName(student.gradeSectionId);
-            const matchesGradoSec = !selectedGradoSec || gradeSectionName === selectedGradoSec;
+            const matchesGradoSec = gradeSectionName === selectedGradoSec;
             const matchesSearch = `${student.fullName}`.toLowerCase().includes(searchTerm.toLowerCase());
             return matchesGradoSec && matchesSearch;
         })
         .sort((a, b) => a.fullName.localeCompare(b.fullName));
 
     const handleFilterByGradoSec = (gradoSec: string) => {
-        setSelectedGradoSec(gradoSec === selectedGradoSec ? '' : gradoSec);
+        setSelectedGradoSec(gradoSec);
     };
 
     const handleDownloadTemplate = () => {
@@ -373,15 +373,6 @@ const StudentsPage = () => {
                 {/* Botones de filtro por gradoSec */}
                 {uniqueGradeSections.length > 0 && (
                     <div className="mb-4 flex flex-wrap gap-2">
-                        <button
-                            onClick={() => setSelectedGradoSec('')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${!selectedGradoSec
-                                ? 'bg-primary-600 text-white shadow-md'
-                                : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
-                                }`}
-                        >
-                            Todos
-                        </button>
                         {uniqueGradeSections.map((gradeSection) => (
                             <button
                                 key={gradeSection.id}
@@ -394,14 +385,6 @@ const StudentsPage = () => {
                                 {gradeSection.name}
                             </button>
                         ))}
-                        {selectedGradoSec && (
-                            <button
-                                onClick={() => setSelectedGradoSec('')}
-                                className="px-4 py-2 rounded-lg text-sm font-medium bg-error-100 dark:bg-error-800/50 text-error-700 dark:text-error-300 hover:bg-error-200 dark:hover:bg-error-700 transition-all duration-200"
-                            >
-                                Limpiar filtro
-                            </button>
-                        )}
                     </div>
                 )}
             </div>
@@ -438,6 +421,22 @@ const StudentsPage = () => {
                             </Button>
                         </div>
                     </div>
+                ) : !selectedGradoSec ? (
+                    // No se ha seleccionado ningún grado/sección
+                    <div className="text-center py-12 px-4 bg-bg-card dark:bg-dark-bg-card rounded-xl border border-neutral-200 dark:border-dark-border">
+                        <div className="bg-primary-100 dark:bg-primary-800/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                            <Users className="h-8 w-8 text-primary-600 dark:text-primary-300" />
+                        </div>
+                        <h3 className="text-lg font-medium text-neutral-900 dark:text-dark-text-primary mb-2">
+                            Selecciona un Grado y Sección
+                        </h3>
+                        <p className="text-neutral-600 dark:text-dark-text-secondary mb-4">
+                            Haz clic en uno de los botones de grado/sección arriba para ver la lista de estudiantes.
+                        </p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            <span className="font-semibold">{uniqueGradeSections.length}</span> grados/secciones disponibles
+                        </p>
+                    </div>
                 ) : sortedAndFilteredStudents.length === 0 ? (
                     // No hay estudiantes que coincidan con el filtro
                     <div className="text-center py-12 px-4 bg-bg-card dark:bg-dark-bg-card rounded-xl border border-neutral-200 dark:border-dark-border">
@@ -445,7 +444,7 @@ const StudentsPage = () => {
                             <Users className="h-8 w-8 text-neutral-400 dark:text-neutral-500" />
                         </div>
                         <h3 className="text-lg font-medium text-neutral-900 dark:text-dark-text-primary mb-2">
-                            {searchTerm ? 'No se encontraron estudiantes' : (selectedGradoSec ? 'No hay estudiantes en esta sección' : 'Selecciona una sección para ver los estudiantes')}
+                            {searchTerm ? 'No se encontraron estudiantes' : 'No hay estudiantes en esta sección'}
                         </h3>
                         <p className="text-neutral-600 dark:text-dark-text-secondary mb-4">
                             {searchTerm

@@ -283,13 +283,13 @@ const EvaluationPage = () => {
                         </div>
                         <div className="flex flex-1 min-w-0">
                             {currentMatrix.criteria.map(criterion => (
-                                <div key={criterion.id} className="flex-1 min-w-20 border-r border-black dark:border-neutral-600 pt-2 text-center bg-neutral-100 dark:bg-neutral-800 flex flex-col justify-between">
+                                <div key={criterion.id} className="flex-1 min-w-27 border-r border-black dark:border-neutral-600 pt-2 text-center bg-neutral-100 dark:bg-neutral-800 flex flex-col justify-between">
                                     <div className="text-[10px] leading-tight mb-1 font-bold break-words px-1 pb-1 text-neutral-700 dark:text-neutral-300">{criterion.name}</div>
                                     <div className="flex justify-center w-full border-t border-neutral-400 dark:border-neutral-700">
-                                        <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400 dark:border-neutral-600">C</span>
-                                        <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400 dark:border-neutral-600">B</span>
-                                        <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400 dark:border-neutral-600">A</span>
-                                        <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-0.5 py-0.5 text-xs font-bold w-full">AD</span>
+                                        <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400 dark:border-neutral-600 last:border-r-0">C</span>
+                                        <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400 dark:border-neutral-600 last:border-r-0">B</span>
+                                        <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400 dark:border-neutral-600 last:border-r-0">A</span>
+                                        <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-0.5 py-0.5 text-xs font-bold w-full border-r border-neutral-400 dark:border-neutral-600 last:border-r-0">AD</span>
                                     </div>
                                 </div>
                             ))}
@@ -325,7 +325,8 @@ const EvaluationPage = () => {
                                 </div>
                                 {/* Nombre fijo */}
                                 <div
-                                    className={`w-40 border-r border-black dark:border-neutral-600 p-2 text-left font-medium text-[10px] ${cellClass} sticky left-8 z-10 flex-shrink-0`}
+                                    className={`w-40 border-r border-black dark:border-neutral-600 p-2 text-left font-medium text-[10px] ${cellClass} sticky left-8 z-10 flex-shrink-0 cursor-pointer`}
+                                    onClick={() => setSelectedStudentId(student.id === selectedStudentId ? null : student.id)}
                                 >
                                     <div className="truncate leading-tight text-neutral-800 dark:text-dark-text-primary">{student.fullName}</div>
                                 </div>
@@ -350,7 +351,7 @@ const EvaluationPage = () => {
                                         const currentLevel = criterionEvaluation?.level || '';
 
                                         return (
-                                            <div key={criterion.id} className={`flex-1 min-w-20 border-r border-black dark:border-neutral-600 ${cellClass}`}>
+                                            <div key={criterion.id} className={`flex-1 min-w-27 border-r border-black dark:border-neutral-600 ${cellClass}`}>
                                                 <div className="grid grid-cols-4 h-8">
                                                     {['C', 'B', 'A', 'AD'].map((level) => {
                                                         const isSelected = currentLevel === level;

@@ -492,3 +492,35 @@ export const checkIfDataExists = async (): Promise<boolean> => {
         return false; // Assume no data on error
     }
 };
+
+export const clearDatabase = async (): Promise<void> => {
+    const db = await initDB();
+    const tx = db.transaction(Object.values(STORES), 'readwrite');
+
+    return new Promise((resolve, reject) => {
+        let clearedCount = 0;
+        const storeNames = Object.values(STORES);
+
+        for (const storeName of storeNames) {
+            const request = tx.objectStore(storeName).clear();
+            request.onsuccess = () => {
+                clearedCount++;
+                if (clearedCount === storeNames.length) {
+                    // All stores cleared
+                }
+            };
+            request.onerror = () => {
+                // Don't reject immediately, let transaction fail
+            };
+        }
+
+        tx.oncomplete = () => {
+            db.close();
+            resolve();
+        };
+        tx.onerror = () => {
+            db.close();
+            reject(tx.error);
+        };
+    });
+};

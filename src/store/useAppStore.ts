@@ -39,7 +39,8 @@ import {
     getAllParticipationEvaluations,
     backupDatabase,
     restoreDatabase,
-    checkIfDataExists
+    checkIfDataExists,
+    clearDatabase
 } from '../utils/indexDB';
 
 interface AppState {
@@ -100,6 +101,7 @@ interface AppState {
     backupData: () => Promise<void>;
     restoreData: (data: Record<string, any[]>) => Promise<void>;
     checkDataExists: () => Promise<boolean>;
+    clearDatabase: () => Promise<void>;
 }
 
 
@@ -580,6 +582,25 @@ export const useAppStore = create<AppState>((set, _get) => ({
         } catch (error: any) {
             set({ error: error.message, loading: false });
             return true; // Assume data exists on error to be safe
+        }
+    },
+    clearDatabase: async () => {
+        set({ loading: true, error: null });
+        try {
+            await clearDatabase();
+            // Clear all state
+            set({
+                gradeSections: [],
+                classrooms: [],
+                students: [],
+                evaluationMatrices: [],
+                studentEvaluations: [],
+                participationEvaluations: [],
+                loading: false,
+                error: null
+            });
+        } catch (error: any) {
+            set({ error: error.message, loading: false });
         }
     },
 }));

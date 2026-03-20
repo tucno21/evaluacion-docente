@@ -3,12 +3,14 @@ import { useAppStore } from '../store/useAppStore';
 import Button from '../components/Button';
 import { useHeaderStore } from '../store/useHeaderStore';
 import Toast from '../components/Toast';
+import ModalAlert from '../components/ModalAlert';
 
 const ConfigPage: React.FC = () => {
-    const { backupData, restoreData, checkDataExists, loading, error } = useAppStore();
+    const { backupData, restoreData, checkDataExists, clearDatabase, loading, error } = useAppStore();
     const [isRestoreDisabled, setIsRestoreDisabled] = useState(true);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [toastInfo, setToastInfo] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { setHeaderTitle } = useHeaderStore();
@@ -68,6 +70,12 @@ const ConfigPage: React.FC = () => {
             }
         };
         reader.readAsText(selectedFile);
+    };
+
+    const handleClearDatabase = async () => {
+        await clearDatabase();
+        setToastInfo({ message: 'Base de datos eliminada exitosamente.', type: 'success' });
+        setTimeout(() => window.location.reload(), 2000);
     };
 
     return (
@@ -132,6 +140,30 @@ const ConfigPage: React.FC = () => {
                     </>
                 )}
             </div>
+
+            <div className="bg-white dark:bg-dark-bg-card shadow-md rounded-lg p-6 mt-8 border border-red-200 dark:border-red-800">
+                <h2 className="text-xl font-semibold mb-4 text-red-700 dark:text-red-400 border-b dark:border-gray-700 pb-2">Zona de Peligro</h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Esta acción eliminará permanentemente todos los datos de la aplicación.
+                    <span className="font-bold text-red-600 dark:text-red-400"> Advertencia:</span> Esta acción no se puede deshacer.
+                </p>
+                <Button onClick={() => setIsDeleteModalOpen(true)} variant="danger" disabled={loading}>
+                    {loading ? 'Eliminando...' : 'Borrar Toda la Base de Datos'}
+                </Button>
+            </div>
+
+            {isDeleteModalOpen && (
+                <ModalAlert
+                    isOpen={isDeleteModalOpen}
+                    onClose={() => setIsDeleteModalOpen(false)}
+                    title="Confirmar Eliminación"
+                    message="¿Estás seguro de que deseas eliminar TODA la base de datos? Esta acción no se puede deshacer y eliminará permanentemente todos los datos de la aplicación."
+                    onConfirm={() => {
+                        setIsDeleteModalOpen(false);
+                        handleClearDatabase();
+                    }}
+                />
+            )}
         </div>
     );
 };

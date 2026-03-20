@@ -29,8 +29,12 @@ const ConfigPage: React.FC = () => {
     }, [checkDataExists]);
 
     const handleBackup = async () => {
-        await backupData();
-        setToastInfo({ message: 'Copia de seguridad creada exitosamente.', type: 'success' });
+        try {
+            await backupData();
+            setToastInfo({ message: 'Copia de seguridad creada exitosamente.', type: 'success' });
+        } catch (error) {
+            setToastInfo({ message: 'Error al crear la copia de seguridad.', type: 'error' });
+        }
     };
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,23 +63,52 @@ const ConfigPage: React.FC = () => {
         reader.onload = async (e) => {
             try {
                 const text = e.target?.result;
+
                 if (typeof text === 'string') {
                     const data = JSON.parse(text);
+
+                    // Validate that data has the expected structure
+                    const requiredStores = ['gradeSections', 'classrooms', 'students', 'evaluationMatrices', 'studentEvaluations', 'participationEvaluations'];
+                    const missingStores = requiredStores.filter(store => !data[store]);
+
+                    if (missingStores.length > 0) {
+                        setToastInfo({
+                            message: `El archivo de respaldo está incompleto. Faltan: ${missingStores.join(', ')}`,
+                            type: 'error'
+                        });
+                        return;
+                    }
+
                     await restoreData(data);
                     setToastInfo({ message: 'Base de datos restaurada exitosamente. La página se recargará.', type: 'success' });
                     setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    setToastInfo({ message: 'Error: El contenido del archivo no es válido.', type: 'error' });
                 }
             } catch (err) {
-                setToastInfo({ message: 'Error al procesar el archivo de respaldo.', type: 'error' });
+                if (err instanceof SyntaxError) {
+                    setToastInfo({ message: 'Error: El archivo no es un JSON válido.', type: 'error' });
+                } else {
+                    setToastInfo({ message: 'Error al procesar el archivo de respaldo.', type: 'error' });
+                }
             }
         };
+
+        reader.onerror = () => {
+            setToastInfo({ message: 'Error al leer el archivo.', type: 'error' });
+        };
+
         reader.readAsText(selectedFile);
     };
 
     const handleClearDatabase = async () => {
-        await clearDatabase();
-        setToastInfo({ message: 'Base de datos eliminada exitosamente.', type: 'success' });
-        setTimeout(() => window.location.reload(), 2000);
+        try {
+            await clearDatabase();
+            setToastInfo({ message: 'Base de datos eliminada exitosamente.', type: 'success' });
+            setTimeout(() => window.location.reload(), 2000);
+        } catch (error) {
+            setToastInfo({ message: 'Error al eliminar la base de datos.', type: 'error' });
+        }
     };
 
     return (

@@ -418,51 +418,90 @@ export const getAllParticipationEvaluations = (): Promise<ParticipationEvaluatio
 
 export const backupDatabase = async (): Promise<Record<string, any[]>> => {
     const backupData: Record<string, any[]> = {};
-    for (const storeName of Object.values(STORES)) {
-        const items = await getAllItems(storeName);
-        backupData[storeName] = items;
+    const storeNames = Object.values(STORES);
+
+    for (const storeName of storeNames) {
+        try {
+            const items = await getAllItems(storeName);
+            backupData[storeName] = items;
+        } catch (error) {
+            backupData[storeName] = [];
+        }
     }
+
     return backupData;
 };
 
 export const restoreDatabase = async (data: Record<string, any[]>): Promise<void> => {
-    const db = await initDB();
-    const tx = db.transaction(Object.values(STORES), 'readwrite');
+    // Validate that data has the expected structure
+    const storeNames = Object.values(STORES);
+    const invalidStores = Object.keys(data).filter(key => !storeNames.includes(key));
 
-    return new Promise((resolve, reject) => {
-        // Clear all stores first
+    if (invalidStores.length > 0) {
+        console.warn('Invalid stores in backup data:', invalidStores);
+    }
+
+    // Check if all required stores are present
+    const missingStores = storeNames.filter(name => !data[name]);
+    if (missingStores.length > 0) {
+        // Create empty arrays for missing stores
+        missingStores.forEach(name => {
+            data[name] = [];
+        });
+    }
+
+    const db = await initDB();
+
+    // Step 1: Clear all stores in one transaction
+    const tx1 = db.transaction(storeNames, 'readwrite');
+    await new Promise<void>((resolve, reject) => {
         let clearedCount = 0;
-        const storeNames = Object.values(STORES);
 
         for (const storeName of storeNames) {
-            const request = tx.objectStore(storeName).clear();
+            const request = tx1.objectStore(storeName).clear();
             request.onsuccess = () => {
                 clearedCount++;
-                if (clearedCount === storeNames.length) {
-                    // All stores cleared, now add new data
-                    for (const storeName of Object.keys(data)) {
-                        if (Object.values(STORES).includes(storeName)) {
-                            const store = tx.objectStore(storeName);
-                            for (const item of data[storeName]) {
-                                // Use put to avoid issues with existing keys if any logic changes
-                                store.put(item);
-                            }
-                        }
-                    }
-                }
             };
             request.onerror = () => {
-                // Don't reject immediately, let the transaction fail
+                // Don't reject immediately, let transaction fail
             };
         }
 
-        tx.oncomplete = () => {
+        tx1.oncomplete = () => {
+            resolve();
+        };
+        tx1.onerror = () => {
+            reject(tx1.error);
+        };
+    });
+
+    // Step 2: Add new data in a separate transaction
+    const tx2 = db.transaction(storeNames, 'readwrite');
+    return new Promise<void>((resolve, reject) => {
+        // Add data to each store
+        for (const storeName of storeNames) {
+            if (data[storeName] && Array.isArray(data[storeName])) {
+                const store = tx2.objectStore(storeName);
+                const items = data[storeName];
+
+                for (const item of items) {
+                    // Use put to add or update items
+                    try {
+                        store.put(item);
+                    } catch (err) {
+                        // Silently ignore errors for individual items
+                    }
+                }
+            }
+        }
+
+        tx2.oncomplete = () => {
             db.close();
             resolve();
         };
-        tx.onerror = () => {
+        tx2.onerror = () => {
             db.close();
-            reject(tx.error);
+            reject(tx2.error);
         };
     });
 };
@@ -488,7 +527,6 @@ export const checkIfDataExists = async (): Promise<boolean> => {
             };
         });
     } catch (error) {
-        console.error("Failed to check for data:", error);
         return false; // Assume no data on error
     }
 };

@@ -176,11 +176,11 @@ const MainLayout = () => {
                         {/* Información de la app */}
                         <div className="flex items-center space-x-4">
                             <p className="text-sm text-neutral-600 dark:text-dark-text-secondary font-medium">
-                                © 2025 Evaluación Docente
+                                © {new Date().getFullYear()} Evaluación Docente
                             </p>
                             <div className="h-4 w-px bg-neutral-300 dark:bg-dark-border"></div>
                             <span className="text-xs text-neutral-500 bg-neutral-100 dark:bg-neutral-700 dark:text-neutral-300 px-2 py-1 rounded-full">
-                                v1.0
+                                v1.5
                             </span>
                         </div>
 

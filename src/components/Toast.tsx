@@ -51,7 +51,7 @@ const Toast: React.FC<ToastProps> = ({
     message,
     type,
     title,
-    duration = 5000,
+    duration = 3500,
     position = 'top-right',
     persistent = false,
     showProgress = true,

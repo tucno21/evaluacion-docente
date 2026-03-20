@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, FileDown } from 'lucide-react'; // Added Copy, FileDown and EyeOff icon
+import { Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, FileDown } from 'lucide-react'; // Added Copy, FileDown and EyeOff icon
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
@@ -267,10 +267,6 @@ const GradePage = () => {
         }
     };
 
-    const goToStudents = () => {
-        navigate(`/grade/${gradeId}/students`);
-    };
-
     const handleDeleteMatrix = (matrixId: string) => {
         setMatrixToDeleteId(matrixId);
         setIsDeleteAlertOpen(true);
@@ -428,17 +424,6 @@ const GradePage = () => {
     return (
         <div className="min-h-full space-y-6">
             <div className="flex gap-4 justify-center">
-                {/* Botón Estudiantes - Secundario */}
-                <div className="flex justify-center">
-                    <Button
-                        onClick={goToStudents}
-                        variant="neutral"
-                    >
-                        <Users className="h-4 w-4" />
-                        <span>Estudiantes ({students.length})</span>
-                    </Button>
-                </div>
-
                 {/* Botón para exportar a Excel (nuevo) */}
                 <div className="flex justify-center">
                     <Button

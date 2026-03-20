@@ -25,7 +25,7 @@ const SUBJECT_OPTIONS = [
 
 const HomePage = () => {
     const navigate = useNavigate();
-    const { classrooms, loadClassrooms, addNewClassroom, deleteClassroom, students } = useAppStore();
+    const { classrooms, loadClassrooms, addNewClassroom, deleteClassroom, loadAllStudents, students } = useAppStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [classroomToDeleteId, setClassroomToDeleteId] = useState<string | null>(null);
@@ -116,8 +116,9 @@ const HomePage = () => {
 
     useEffect(() => {
         loadClassrooms();
+        loadAllStudents();
         getAllGradeSections().then(setGradeSections);
-    }, [loadClassrooms]);
+    }, [loadClassrooms, loadAllStudents]);
 
     return (
         <div className="min-h-full space-y-6">

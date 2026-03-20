@@ -81,7 +81,7 @@ const ConfigPage: React.FC = () => {
 
                     await restoreData(data);
                     setToastInfo({ message: 'Base de datos restaurada exitosamente. La página se recargará.', type: 'success' });
-                    setTimeout(() => window.location.reload(), 2000);
+                    setTimeout(() => window.location.reload(), 5200);
                 } else {
                     setToastInfo({ message: 'Error: El contenido del archivo no es válido.', type: 'error' });
                 }
@@ -105,7 +105,7 @@ const ConfigPage: React.FC = () => {
         try {
             await clearDatabase();
             setToastInfo({ message: 'Base de datos eliminada exitosamente.', type: 'success' });
-            setTimeout(() => window.location.reload(), 2000);
+            setTimeout(() => window.location.reload(), 5200);
         } catch (error) {
             setToastInfo({ message: 'Error al eliminar la base de datos.', type: 'error' });
         }

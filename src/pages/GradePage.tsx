@@ -51,6 +51,7 @@ const GradePage = () => {
     const [copyErrors, setCopyErrors] = useState<Record<string, string>>({});
     const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
     const [allGradeSections, setAllGradeSections] = useState<GradeSection[]>([]);
+    const [currentGradeSectionId, setCurrentGradeSectionId] = useState<string>('');
     const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
     const [downloadMessage, setDownloadMessage] = useState(''); // New state for download message
     const [expandedMatrixId, setExpandedMatrixId] = useState<string | null>(null); // New state for expanded matrix
@@ -334,9 +335,12 @@ const GradePage = () => {
             const fetchedStudentEvaluations = await loadEvaluationsByMatrix(matrix.id);
             const fetchedParticipationEvaluations = await loadParticipationEvaluationsByMatrix(matrix.id);
 
+            // Filtrar estudiantes solo del classroom actual (por gradeSectionId)
+            const filteredStudents = students.filter(student => student.gradeSectionId === currentGradeSectionId);
+
             const excelBlob = generateEvaluationExcel(
                 matrix,
-                students,
+                filteredStudents,
                 fetchedStudentEvaluations,
                 fetchedParticipationEvaluations
             );
@@ -370,6 +374,9 @@ const GradePage = () => {
             const allStudentEvals = await getAllStudentEvaluations(); // Get all student evaluations
             const allParticipationEvals = await getAllParticipationEvaluations(); // Get all participation evaluations
 
+            // Filtrar estudiantes solo del classroom actual (por gradeSectionId)
+            const filteredStudents = students.filter(student => student.gradeSectionId === currentGradeSectionId);
+
             let excelBlob: Blob | null = null;
             const start = exportStartDate ? new Date(exportStartDate) : null;
             const end = exportEndDate ? new Date(exportEndDate) : null;
@@ -377,7 +384,7 @@ const GradePage = () => {
             if (exportType === 'criterios') {
                 excelBlob = await generateCriteriaExcel(
                     allMatrices.filter(m => m.classroomId === gradeId), // Filter matrices for current classroom
-                    students,
+                    filteredStudents,
                     allStudentEvals.filter(se => allMatrices.some(m => m.id === se.matrixId && m.classroomId === gradeId)), // Filter student evals for current classroom's matrices
                     allParticipationEvals.filter(pe => allMatrices.some(m => m.id === pe.matrixId && m.classroomId === gradeId)), // Filter participation evals for current classroom's matrices
                     start,
@@ -385,7 +392,7 @@ const GradePage = () => {
                 );
             } else if (exportType === 'participacion') {
                 excelBlob = generateParticipationExcel(
-                    students,
+                    filteredStudents,
                     allParticipationEvals.filter(pe => allMatrices.some(m => m.id === pe.matrixId && m.classroomId === gradeId)), // Filter participation evals for current classroom's matrices
                     allMatrices.filter(m => m.classroomId === gradeId), // Filter matrices for current classroom
                     start,
@@ -433,6 +440,7 @@ const GradePage = () => {
                     const gradeSection = gradeSectionsData.find((gs: GradeSection) => gs.id === fetchedClassroom.gradeSectionId);
                     const gradeSectionName = gradeSection ? gradeSection.name : '';
                     setHeaderTitle(`${fetchedClassroom.name} - ${gradeSectionName}`);
+                    setCurrentGradeSectionId(fetchedClassroom.gradeSectionId); // Guardar el gradeSectionId del classroom actual
                 } else {
                     setHeaderTitle('Cargando aula...');
                 }

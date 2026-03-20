@@ -62,11 +62,26 @@ const GradePage = () => {
     const [exportEndDate, setExportEndDate] = useState<string>('');
     const [exportErrors, setExportErrors] = useState<Record<string, string>>({});
 
+    // Función para obtener la fecha local actual en formato YYYY-MM-DD
+    const getLocalDateString = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // Función para parsear fecha string como local (no UTC)
+    const parseLocalDate = (dateString: string) => {
+        const [year, month, day] = dateString.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    };
+
     // Agrupar matrices por mes y ordenar
     const groupedMatrices = evaluationMatrices
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime())
         .reduce((groups, matrix) => {
-            const date = new Date(matrix.date);
+            const date = parseLocalDate(matrix.date);
             const monthYear = date.toLocaleDateString('es', { month: 'long', year: 'numeric' });
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
@@ -93,8 +108,13 @@ const GradePage = () => {
         if (!formData.date) {
             newErrors.date = 'La fecha es obligatoria';
         } else {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            // Crear fecha usando solo año, mes, día para evitar problemas de zona horaria
+            const todayDateString = getLocalDateString();
+            const selectedDateString = formData.date;
+
+            if (selectedDateString < todayDateString) {
+                newErrors.date = 'La fecha no puede ser anterior a la fecha actual';
+            }
         }
 
         const validCriteria: EvaluationCriterion[] = criteria.filter(c => c.name.trim() !== '');
@@ -324,7 +344,7 @@ const GradePage = () => {
             const url = window.URL.createObjectURL(excelBlob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${matrix.name}_${new Date(matrix.date).toLocaleDateString('es')}_evaluacion.xlsx`;
+            a.download = `${matrix.name}_${parseLocalDate(matrix.date).toLocaleDateString('es')}_evaluacion.xlsx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -500,7 +520,7 @@ const GradePage = () => {
                                                                 <div className="flex items-center bg-neutral-50 dark:bg-neutral-700/50 px-2 py-1 rounded-lg">
                                                                     <Calendar className="h-3 w-3 mr-1.5 shrink-0 text-neutral-500 dark:text-neutral-400" />
                                                                     <span className="font-medium">
-                                                                        {new Date(matrix.date).toLocaleDateString('es', {
+                                                                        {parseLocalDate(matrix.date).toLocaleDateString('es', {
                                                                             day: '2-digit',
                                                                             month: 'short',
                                                                             ...(window.innerWidth > 640 && { weekday: 'short' })
@@ -657,6 +677,7 @@ const GradePage = () => {
                                 onChange={(e) => handleInputChange('date', e.target.value)}
                                 error={errors.date}
                                 inputClassName="focus:ring-primary-500"
+                                min={getLocalDateString()}
                             />
 
                             {/* Criterios de evaluación */}

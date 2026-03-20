@@ -3,7 +3,7 @@ import { Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, Fi
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
-import type { EvaluationMatrix, EvaluationCriterion, Classroom } from '../types/types';
+import type { EvaluationMatrix, EvaluationCriterion, Classroom, GradeSection } from '../types/types';
 import { v4 as uuidv4 } from 'uuid';
 import { getClassroomById, getAllClassrooms, getAllGradeSections } from '../utils/indexDB'; // Added getAllGradeSections
 import ModalAlert from '../components/ModalAlert'; // Import ModalAlert
@@ -50,6 +50,7 @@ const GradePage = () => {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copyErrors, setCopyErrors] = useState<Record<string, string>>({});
     const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
+    const [allGradeSections, setAllGradeSections] = useState<GradeSection[]>([]);
     const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
     const [downloadMessage, setDownloadMessage] = useState(''); // New state for download message
     const [expandedMatrixId, setExpandedMatrixId] = useState<string | null>(null); // New state for expanded matrix
@@ -405,9 +406,11 @@ const GradePage = () => {
             loadMatricesByClassroom(gradeId);
             const fetchClassroomAndClassrooms = async () => {
                 const fetchedClassroom = await getClassroomById(gradeId);
+                const gradeSectionsData = await getAllGradeSections();
+                setAllGradeSections(gradeSectionsData);
+
                 if (fetchedClassroom) {
-                    const gradeSections = await getAllGradeSections();
-                    const gradeSection = gradeSections.find(gs => gs.id === fetchedClassroom.gradeSectionId);
+                    const gradeSection = gradeSectionsData.find((gs: GradeSection) => gs.id === fetchedClassroom.gradeSectionId);
                     const gradeSectionName = gradeSection ? gradeSection.name : '';
                     setHeaderTitle(`${fetchedClassroom.name} - ${gradeSectionName}`);
                 } else {
@@ -772,10 +775,14 @@ const GradePage = () => {
                                 error={copyErrors.classroomId}
                                 options={[
                                     { value: '', label: '-- Selecciona un aula --' },
-                                    ...allClassrooms.map(classroom => ({
-                                        value: classroom.id,
-                                        label: `${classroom.name} - ${classroom.gradeSectionId ? classroom.gradeSectionId : ''}`
-                                    }))
+                                    ...allClassrooms.map(classroom => {
+                                        const gradeSection = allGradeSections.find((gs: GradeSection) => gs.id === classroom.gradeSectionId);
+                                        const gradeSectionName = gradeSection ? gradeSection.name : '';
+                                        return {
+                                            value: classroom.id,
+                                            label: `${classroom.name} - ${gradeSectionName}`
+                                        };
+                                    })
                                 ]}
                             />
 

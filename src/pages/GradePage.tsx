@@ -11,7 +11,7 @@ import Inputs from '../components/Inputs'; // Import Inputs component
 import Select from '../components/Select'; // Import Select component
 import Button from '../components/Button'; // Import Button component
 import LoadingSpinner from '../components/LoadingSpinner'; // Import LoadingSpinner component
-import { generateEvaluationExcel, generateParticipationExcel, generateCriteriaExcel } from '../utils/excel'; // Import the new excel functions
+import { generateEvaluationExcel, generateParticipationExcel, generateCriteriaExcel, generateCompetenciaParticipacionExcel } from '../utils/excel'; // Import the new excel functions
 
 const GradePage = () => {
     const { gradeId } = useParams<{ gradeId: string }>();
@@ -59,7 +59,7 @@ const GradePage = () => {
 
     // New states for Excel export modal
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-    const [exportType, setExportType] = useState<'criterios' | 'participacion' | ''>('');
+    const [exportType, setExportType] = useState<'criterios' | 'participacion' | 'competencia_participacion' | ''>('');
     const [exportStartDate, setExportStartDate] = useState<string>('');
     const [exportEndDate, setExportEndDate] = useState<string>('');
     const [exportErrors, setExportErrors] = useState<Record<string, string>>({});
@@ -258,7 +258,7 @@ const GradePage = () => {
 
     const handleExportInputChange = (field: string, value: string) => {
         if (field === 'exportType') {
-            setExportType(value as 'criterios' | 'participacion' | '');
+            setExportType(value as 'criterios' | 'participacion' | 'competencia_participacion' | '');
         } else if (field === 'exportStartDate') {
             setExportStartDate(value);
         } else if (field === 'exportEndDate') {
@@ -375,8 +375,13 @@ const GradePage = () => {
     const handleExportExcel = async () => {
         if (!validateExportForm()) return;
 
+        let exportTypeName = '';
+        if (exportType === 'criterios') exportTypeName = 'Criterios';
+        else if (exportType === 'participacion') exportTypeName = 'Participación';
+        else if (exportType === 'competencia_participacion') exportTypeName = 'Competencia Participación';
+
         setIsDownloadingExcel(true);
-        setDownloadMessage(`Generando Excel de ${exportType === 'criterios' ? 'Criterios' : 'Participación'}...`);
+        setDownloadMessage(`Generando Excel de ${exportTypeName}...`);
         try {
             await loadAllStudents();
             const allMatrices = await getAllEvaluationMatrices(); // Get all matrices
@@ -404,6 +409,14 @@ const GradePage = () => {
                     filteredStudents,
                     allParticipationEvals.filter(pe => allMatrices.some(m => m.id === pe.matrixId && m.classroomId === gradeId)), // Filter participation evals for current classroom's matrices
                     allMatrices.filter(m => m.classroomId === gradeId), // Filter matrices for current classroom
+                    start,
+                    end
+                );
+            } else if (exportType === 'competencia_participacion') {
+                excelBlob = await generateCompetenciaParticipacionExcel(
+                    allMatrices.filter(m => m.classroomId === gradeId), // Filter matrices for current classroom
+                    filteredStudents,
+                    allParticipationEvals.filter(pe => allMatrices.some(m => m.id === pe.matrixId && m.classroomId === gradeId)), // Filter participation evals for current classroom's matrices
                     start,
                     end
                 );
@@ -919,7 +932,8 @@ const GradePage = () => {
                                 options={[
                                     { value: '', label: '-- Seleccione una opción --' },
                                     { value: 'criterios', label: 'Por criterios' },
-                                    { value: 'participacion', label: 'Por participación' }
+                                    { value: 'participacion', label: 'Por participación' },
+                                    { value: 'competencia_participacion', label: 'Por Competencia participacion' }
                                 ]}
                             />
 

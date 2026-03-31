@@ -857,3 +857,360 @@ export const generateExcelTemplate = (): Blob => {
     // Create a Blob from ArrayBuffer
     return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 };
+
+// Function to generate Excel by Competencia (Criteria) - one sheet per competency
+export const generateCompetenciaCriteriaExcel = async (
+    evaluationMatrices: EvaluationMatrix[],
+    students: Student[],
+    studentEvaluations: StudentEvaluation[],
+    startDate: Date | null,
+    endDate: Date | null
+): Promise<Blob> => {
+    const wb = XLSX.utils.book_new();
+
+    // Get unique competencias (1, 2, 3, 4)
+    const uniqueCompetencias = Array.from(new Set(evaluationMatrices.map(m => m.competencia))).sort((a, b) => a - b);
+
+    // Filter matrices by date range
+    const filteredMatrices = evaluationMatrices.filter(matrix => {
+        const matrixDate = new Date(matrix.date);
+        matrixDate.setHours(0, 0, 0, 0);
+        const start = startDate ? new Date(startDate) : null;
+        if (start) start.setHours(0, 0, 0, 0);
+        const end = endDate ? new Date(endDate) : null;
+        if (end) end.setHours(0, 0, 0, 0);
+
+        return (!start || matrixDate >= start) && (!end || matrixDate <= end);
+    });
+
+    // Generate one sheet per competency
+    for (const competencia of uniqueCompetencias) {
+        const matricesForCompetencia = filteredMatrices
+            .filter(m => m.competencia === competencia)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        if (matricesForCompetencia.length === 0) continue;
+
+        const ws_data: any[][] = [];
+
+        // Title
+        ws_data.push([`COMPETENCIA ${competencia}`]);
+        ws_data.push(['']); // Separator
+
+        // Headers
+        const headerRow: any[] = ['N°', 'ESTUDIANTE'];
+        matricesForCompetencia.forEach(matrix => {
+            const date = new Date(matrix.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            headerRow.push(`${date}\n${matrix.name}`);
+        });
+        ws_data.push(headerRow);
+
+        // Calculate total score row
+        const totalRow: any[] = ['', 'PROMEDIO'];
+        matricesForCompetencia.forEach(matrix => {
+            const relevantEvals = studentEvaluations.filter(se => se.matrixId === matrix.id);
+            if (relevantEvals.length > 0) {
+                const totalScore = relevantEvals.reduce((sum, evaluation) => {
+                    const criteriaScore = evaluation.criteriaEvaluations.reduce((cSum, ce) => {
+                        const scoreMap: Record<string, number> = { 'C': 1, 'B': 2, 'A': 3, 'AD': 4 };
+                        return cSum + (scoreMap[ce.level] || 0);
+                    }, 0);
+                    return sum + criteriaScore;
+                }, 0);
+                const avg = totalScore / (relevantEvals.length * matricesForCompetencia[0].criteria.length || 1);
+                totalRow.push(avg.toFixed(2));
+            } else {
+                totalRow.push('-');
+            }
+        });
+        ws_data.push(totalRow);
+
+        // Student data
+        students.forEach((student, index) => {
+            const row: any[] = [index + 1, student.fullName];
+            matricesForCompetencia.forEach(matrix => {
+                const studentEval = studentEvaluations.find(se => se.studentId === student.id && se.matrixId === matrix.id);
+                if (studentEval) {
+                    const totalScore = studentEval.criteriaEvaluations.reduce((sum, ce) => {
+                        const scoreMap: Record<string, number> = { 'C': 1, 'B': 2, 'A': 3, 'AD': 4 };
+                        return sum + (scoreMap[ce.level] || 0);
+                    }, 0);
+                    const avg = totalScore / (matrix.criteria.length || 1);
+                    row.push(avg.toFixed(2));
+                } else {
+                    row.push('N/E');
+                }
+            });
+            ws_data.push(row);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+        // Merges for title
+        const maxCols = headerRow.length;
+        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: maxCols - 1 } }];
+
+        // Column widths
+        const colWidths = [
+            { wch: 6 }, // N°
+            { wch: 25 }, // ESTUDIANTE
+        ];
+        matricesForCompetencia.forEach(() => {
+            colWidths.push({ wch: 20 }); // Evaluation columns
+        });
+        ws['!cols'] = colWidths;
+
+        // Styles
+        const titleStyle = {
+            font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "1E3A8A" } }, // Blue-800
+            alignment: { horizontal: "center", vertical: "center", wrapText: true },
+            border: {
+                top: { style: "medium", color: { rgb: "000000" } },
+                bottom: { style: "medium", color: { rgb: "000000" } },
+                left: { style: "medium", color: { rgb: "000000" } },
+                right: { style: "medium", color: { rgb: "000000" } },
+            },
+        };
+
+        const headerStyle = {
+            font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "3B82F6" } }, // Blue-500
+            alignment: { horizontal: "center", vertical: "center", wrapText: true },
+            border: {
+                top: { style: "medium", color: { rgb: "000000" } },
+                bottom: { style: "medium", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } },
+            },
+        };
+
+        const dataStyle = {
+            font: { sz: 10, color: { rgb: "1F2937" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: {
+                top: { style: "thin", color: { rgb: "D1D5DB" } },
+                bottom: { style: "thin", color: { rgb: "D1D5DB" } },
+                left: { style: "thin", color: { rgb: "D1D5DB" } },
+                right: { style: "thin", color: { rgb: "D1D5DB" } },
+            },
+        };
+
+        const nameStyle = {
+            font: { sz: 10, color: { rgb: "1F2937" } },
+            alignment: { horizontal: "left", vertical: "center" },
+            border: {
+                top: { style: "thin", color: { rgb: "D1D5DB" } },
+                bottom: { style: "thin", color: { rgb: "D1D5DB" } },
+                left: { style: "thin", color: { rgb: "D1D5DB" } },
+                right: { style: "thin", color: { rgb: "D1D5DB" } },
+            },
+        };
+
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[cell_address]) continue;
+
+                if (R === 0) {
+                    ws[cell_address].s = titleStyle;
+                } else if (R === 2) { // Header row
+                    ws[cell_address].s = headerStyle;
+                } else if (R >= 3) { // Data rows
+                    if (C === 1) {
+                        ws[cell_address].s = nameStyle;
+                    } else {
+                        ws[cell_address].s = dataStyle;
+                    }
+                }
+            }
+        }
+
+        ws['!rows'] = [
+            { hpt: 25 }, // Title
+            { hpt: 10 }, // Separator
+            { hpt: 25 }, // Headers
+        ];
+        for (let i = 0; i < students.length; i++) {
+            ws['!rows']?.push({ hpt: 18 });
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, `Competencia ${competencia}`);
+    }
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+    const buf = new ArrayBuffer(wbout.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i < wbout.length; i++) {
+        view[i] = wbout.charCodeAt(i) & 0xFF;
+    }
+
+    return new Blob([buf], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+};
+
+// Function to generate Excel by Competencia (Participación) - one sheet per competency
+export const generateCompetenciaParticipacionExcel = async (
+    evaluationMatrices: EvaluationMatrix[],
+    students: Student[],
+    participationEvaluations: ParticipationEvaluation[],
+    startDate: Date | null,
+    endDate: Date | null
+): Promise<Blob> => {
+    const wb = XLSX.utils.book_new();
+
+    // Get unique competencias (1, 2, 3, 4)
+    const uniqueCompetencias = Array.from(new Set(evaluationMatrices.map(m => m.competencia))).sort((a, b) => a - b);
+
+    // Filter matrices by date range
+    const filteredMatrices = evaluationMatrices.filter(matrix => {
+        const matrixDate = new Date(matrix.date);
+        matrixDate.setHours(0, 0, 0, 0);
+        const start = startDate ? new Date(startDate) : null;
+        if (start) start.setHours(0, 0, 0, 0);
+        const end = endDate ? new Date(endDate) : null;
+        if (end) end.setHours(0, 0, 0, 0);
+
+        return (!start || matrixDate >= start) && (!end || matrixDate <= end);
+    });
+
+    // Generate one sheet per competency
+    for (const competencia of uniqueCompetencias) {
+        const matricesForCompetencia = filteredMatrices
+            .filter(m => m.competencia === competencia)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        if (matricesForCompetencia.length === 0) continue;
+
+        const ws_data: any[][] = [];
+
+        // Title
+        ws_data.push([`COMPETENCIA ${competencia} - PARTICIPACIÓN`]);
+        ws_data.push(['']); // Separator
+
+        // Headers
+        const headerRow: any[] = ['N°', 'ESTUDIANTE'];
+        matricesForCompetencia.forEach(matrix => {
+            const date = new Date(matrix.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            headerRow.push(`${date}\n${matrix.name}`);
+        });
+        ws_data.push(headerRow);
+
+        // Student data
+        students.forEach((student, index) => {
+            const row: any[] = [index + 1, student.fullName];
+            matricesForCompetencia.forEach(matrix => {
+                const participation = participationEvaluations.find(pe => pe.studentId === student.id && pe.matrixId === matrix.id);
+                row.push(participation ? participation.level : 'N/E');
+            });
+            ws_data.push(row);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+        // Merges for title
+        const maxCols = headerRow.length;
+        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: maxCols - 1 } }];
+
+        // Column widths
+        const colWidths = [
+            { wch: 6 }, // N°
+            { wch: 25 }, // ESTUDIANTE
+        ];
+        matricesForCompetencia.forEach(() => {
+            colWidths.push({ wch: 20 }); // Participation columns
+        });
+        ws['!cols'] = colWidths;
+
+        // Styles
+        const titleStyle = {
+            font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "1E3A8A" } }, // Blue-800
+            alignment: { horizontal: "center", vertical: "center", wrapText: true },
+            border: {
+                top: { style: "medium", color: { rgb: "000000" } },
+                bottom: { style: "medium", color: { rgb: "000000" } },
+                left: { style: "medium", color: { rgb: "000000" } },
+                right: { style: "medium", color: { rgb: "000000" } },
+            },
+        };
+
+        const headerStyle = {
+            font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "3B82F6" } }, // Blue-500
+            alignment: { horizontal: "center", vertical: "center", wrapText: true },
+            border: {
+                top: { style: "medium", color: { rgb: "000000" } },
+                bottom: { style: "medium", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } },
+            },
+        };
+
+        const dataStyle = {
+            font: { sz: 10, color: { rgb: "1F2937" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: {
+                top: { style: "thin", color: { rgb: "D1D5DB" } },
+                bottom: { style: "thin", color: { rgb: "D1D5DB" } },
+                left: { style: "thin", color: { rgb: "D1D5DB" } },
+                right: { style: "thin", color: { rgb: "D1D5DB" } },
+            },
+        };
+
+        const nameStyle = {
+            font: { sz: 10, color: { rgb: "1F2937" } },
+            alignment: { horizontal: "left", vertical: "center" },
+            border: {
+                top: { style: "thin", color: { rgb: "D1D5DB" } },
+                bottom: { style: "thin", color: { rgb: "D1D5DB" } },
+                left: { style: "thin", color: { rgb: "D1D5DB" } },
+                right: { style: "thin", color: { rgb: "D1D5DB" } },
+            },
+        };
+
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[cell_address]) continue;
+
+                if (R === 0) {
+                    ws[cell_address].s = titleStyle;
+                } else if (R === 2) { // Header row
+                    ws[cell_address].s = headerStyle;
+                } else if (R >= 3) { // Data rows
+                    if (C === 1) {
+                        ws[cell_address].s = nameStyle;
+                    } else {
+                        ws[cell_address].s = dataStyle;
+                    }
+                }
+            }
+        }
+
+        ws['!rows'] = [
+            { hpt: 25 }, // Title
+            { hpt: 10 }, // Separator
+            { hpt: 25 }, // Headers
+        ];
+        for (let i = 0; i < students.length; i++) {
+            ws['!rows']?.push({ hpt: 18 });
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, `Competencia ${competencia}`);
+    }
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+    const buf = new ArrayBuffer(wbout.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i < wbout.length; i++) {
+        view[i] = wbout.charCodeAt(i) & 0xFF;
+    }
+
+    return new Blob([buf], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+};

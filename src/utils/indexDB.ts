@@ -3,7 +3,7 @@ import type { Classroom, Student, EvaluationMatrix, StudentEvaluation, Participa
 
 // IndexedDB configuration
 const DB_NAME = 'teacher-evaluation-app';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const STORES = {
     gradeSections: 'gradeSections',
     classrooms: 'classrooms',

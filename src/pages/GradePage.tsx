@@ -38,7 +38,8 @@ const GradePage = () => {
     const [matrixToCopy, setMatrixToCopy] = useState<EvaluationMatrix | null>(null);
     const [formData, setFormData] = useState({
         name: '',
-        date: ''
+        date: '',
+        competencia: '' as string
     });
     const [copyFormData, setCopyFormData] = useState({
         classroomId: '',
@@ -118,6 +119,10 @@ const GradePage = () => {
             }
         }
 
+        if (!formData.competencia) {
+            newErrors.competencia = 'Debe seleccionar una competencia';
+        }
+
         const validCriteria: EvaluationCriterion[] = criteria.filter(c => c.name.trim() !== '');
         if (validCriteria.length === 0) {
             newErrors.criteria = 'Debe agregar al menos un criterio de evaluación';
@@ -186,6 +191,7 @@ const GradePage = () => {
                 classroomId: gradeId!,
                 name: formData.name.trim(),
                 date: formData.date,
+                competencia: parseInt(formData.competencia),
                 criteria: validCriteria.map((c: EvaluationCriterion) => ({ id: c.id!, name: c.name.trim() })),
             };
             await updateExistingMatrix(updatedMatrix);
@@ -194,6 +200,7 @@ const GradePage = () => {
                 classroomId: gradeId!,
                 name: formData.name.trim(),
                 date: formData.date,
+                competencia: parseInt(formData.competencia),
                 criteria: validCriteria.map((c: EvaluationCriterion) => ({ id: c.id!, name: c.name.trim() })),
             };
             await addNewEvaluationMatrix(newMatrix);
@@ -210,6 +217,7 @@ const GradePage = () => {
             classroomId: copyFormData.classroomId,
             name: matrixToCopy.name,
             date: copyFormData.date,
+            competencia: matrixToCopy.competencia,
             criteria: matrixToCopy.criteria.map(c => ({ id: uuidv4(), name: c.name })), // Generate new IDs for criteria
         };
 
@@ -221,7 +229,7 @@ const GradePage = () => {
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingMatrixId(null);
-        setFormData({ name: '', date: '' });
+        setFormData({ name: '', date: '', competencia: '' });
         setCriteria([{ id: uuidv4(), name: '' }]);
         setErrors({});
     };
@@ -314,7 +322,8 @@ const GradePage = () => {
             setEditingMatrixId(matrixId);
             setFormData({
                 name: matrixToEdit.name,
-                date: matrixToEdit.date
+                date: matrixToEdit.date,
+                competencia: matrixToEdit.competencia.toString()
             });
             setCriteria(matrixToEdit.criteria.map(c => ({ ...c })));
             setIsModalOpen(true);
@@ -686,6 +695,22 @@ const GradePage = () => {
                                 error={errors.date}
                                 inputClassName="focus:ring-primary-500"
                                 min={getLocalDateString()}
+                            />
+
+                            {/* Competencia */}
+                            <Select
+                                label="Competencia"
+                                id="evalCompetencia"
+                                value={formData.competencia}
+                                onChange={(e) => handleInputChange('competencia', e.target.value)}
+                                error={errors.competencia}
+                                options={[
+                                    { value: '', label: '-- Selecciona una competencia --' },
+                                    { value: '1', label: '1' },
+                                    { value: '2', label: '2' },
+                                    { value: '3', label: '3' },
+                                    { value: '4', label: '4' }
+                                ]}
                             />
 
                             {/* Criterios de evaluación */}

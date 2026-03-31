@@ -32,6 +32,7 @@ export interface EvaluationMatrix {
     classroomId: string;
     name: string;
     date: string;
+    competencia: number; // 1, 2, 3, or 4
     criteria: EvaluationCriterion[];
 }
 

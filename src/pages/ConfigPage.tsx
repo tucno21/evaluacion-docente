@@ -79,6 +79,21 @@ const ConfigPage: React.FC = () => {
                         return;
                     }
 
+                    // Migrate evaluation matrices to include competencia field if missing
+                    // This handles old backups that don't have the competencia field
+                    if (data.evaluationMatrices && Array.isArray(data.evaluationMatrices)) {
+                        data.evaluationMatrices = data.evaluationMatrices.map((matrix: any) => {
+                            if (!matrix.competencia) {
+                                // Assign default value of 1 if competencia field is missing
+                                matrix.competencia = 1;
+                            } else if (typeof matrix.competencia !== 'number') {
+                                // Ensure competencia is a number
+                                matrix.competencia = parseInt(matrix.competencia) || 1;
+                            }
+                            return matrix;
+                        });
+                    }
+
                     await restoreData(data);
                     setToastInfo({ message: 'Base de datos restaurada exitosamente. La página se recargará.', type: 'success' });
                     setTimeout(() => window.location.reload(), 5200);

@@ -181,7 +181,11 @@ export const useAppStore = create<AppState>((set, _get) => ({
         set({ loading: true, error: null });
         try {
             const data = await getAllClassrooms();
-            set({ classrooms: data, loading: false });
+            // Ordenar por createdAt ascendente (las más antiguas primero)
+            const sortedData = data.sort((a, b) =>
+                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            );
+            set({ classrooms: sortedData, loading: false });
         } catch (error: any) {
             set({ error: error.message, loading: false });
         }
@@ -192,10 +196,14 @@ export const useAppStore = create<AppState>((set, _get) => ({
             const id = await addClassroom(classroom);
             if (id) {
                 const newClassroom = { ...classroom, id };
-                set((state) => ({
-                    classrooms: [...state.classrooms, newClassroom],
-                    error: null,
-                }));
+                set((state) => {
+                    // Insertar la nueva aula en la posición correcta según createdAt
+                    const newClassrooms = [...state.classrooms, newClassroom];
+                    newClassrooms.sort((a, b) =>
+                        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                    );
+                    return { classrooms: newClassrooms, error: null };
+                });
                 return id;
             }
         } catch (error: any) {

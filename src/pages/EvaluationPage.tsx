@@ -275,7 +275,7 @@ const EvaluationPage = () => {
                         <div className="w-8 border-r border-neutral-400 dark:border-neutral-700 p-2 text-center font-bold text-xs text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 sticky left-0 z-20 flex-shrink-0">
                             N°
                         </div>
-                        <div className="w-40 border-r border-black dark:border-neutral-600 p-2 text-left font-bold text-xs text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 sticky left-8 z-20 flex-shrink-0">
+                        <div className="w-40 md:w-47 border-r border-black dark:border-neutral-600 p-2 text-left font-bold text-xs text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 sticky left-8 z-20 flex-shrink-0">
                             NOMBRES Y APELLIDOS
                         </div>
                         <div className="w-7 md:w-10 border-r border-black dark:border-neutral-600 p-2 text-left font-bold text-xs text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 sticky left-8 z-0 flex-shrink-0">
@@ -325,7 +325,7 @@ const EvaluationPage = () => {
                                 </div>
                                 {/* Nombre fijo */}
                                 <div
-                                    className={`w-40 border-r border-black dark:border-neutral-600 p-2 text-left font-medium text-[10px] ${cellClass} sticky left-8 z-10 flex-shrink-0 cursor-pointer`}
+                                    className={`w-40 md:w-47 border-r border-black dark:border-neutral-600 p-2 text-left font-medium text-[10px] ${cellClass} sticky left-8 z-10 flex-shrink-0 cursor-pointer`}
                                     onClick={() => setSelectedStudentId(student.id === selectedStudentId ? null : student.id)}
                                 >
                                     <div className="truncate leading-tight text-neutral-800 dark:text-dark-text-primary">{student.fullName}</div>

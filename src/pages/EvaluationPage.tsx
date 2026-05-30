@@ -189,8 +189,11 @@ const EvaluationPage = () => {
         const studentEvaluationToUpdate = memoizedEvaluations.find(se => se.studentId === studentId);
         if (!studentEvaluationToUpdate) return;
 
+        const currentLevel = studentEvaluationToUpdate.criteriaEvaluations.find(ce => ce.criterionId === criterionId)?.level;
+        const newLevel = currentLevel === level ? '' as AchievementLevel : level;
+
         const updatedCriteria = studentEvaluationToUpdate.criteriaEvaluations.map(ce =>
-            ce.criterionId === criterionId ? { ...ce, level } : ce
+            ce.criterionId === criterionId ? { ...ce, level: newLevel } : ce
         );
 
         const updatedEvaluation: StudentEvaluation = {
@@ -210,7 +213,7 @@ const EvaluationPage = () => {
     };
 
     const handleParticipationChange = async (studentId: string, currentLevel: ParticipationLevel | '') => {
-        const participationLevels: ParticipationLevel[] = ['F', 'C', 'B', 'B+', 'A', 'A+'];
+        const participationLevels: ParticipationLevel[] = ['F', 'J', 'C', 'B', 'B+', 'A', 'A+'];
         const currentIndex = participationLevels.indexOf(currentLevel as ParticipationLevel);
         const nextIndex = (currentIndex + 1) % participationLevels.length;
         const nextLevel = participationLevels[nextIndex];

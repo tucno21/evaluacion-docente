@@ -306,6 +306,7 @@ const GradePage = () => {
     const getParticipationColor = (level: string) => {
         switch (level) {
             case 'F': return 'bg-neutral-200 text-neutral-600 border-neutral-300 dark:bg-neutral-700 dark:text-neutral-300 dark:border-neutral-600';
+            case 'J': return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700';
             case 'C': return 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700';
             case 'B': return 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700';
             case 'B+': return 'bg-yellow-200 text-yellow-800 border-yellow-400 dark:bg-yellow-900/60 dark:text-yellow-200 dark:border-yellow-600';
@@ -1536,7 +1537,7 @@ const GradePage = () => {
                                             </div>
                                             {studentResults.length > 0 && (() => {
                                                 const total = studentResults.filter(r => r.participationLevel).length;
-                                                const counts = { F: 0, C: 0, B: 0, 'B+': 0, A: 0, 'A+': 0 };
+                                                const counts = { F: 0, J: 0, C: 0, B: 0, 'B+': 0, A: 0, 'A+': 0 };
                                                 studentResults.forEach(r => {
                                                     if (r.participationLevel && r.participationLevel in counts) {
                                                         (counts as Record<string, number>)[r.participationLevel]++;
@@ -1544,6 +1545,7 @@ const GradePage = () => {
                                                 });
                                                 const levels: { key: string; bg: string; text: string }[] = [
                                                     { key: 'F', bg: 'bg-neutral-300 dark:bg-neutral-600', text: 'text-neutral-700 dark:text-neutral-200' },
+                                                    { key: 'J', bg: 'bg-orange-200 dark:bg-orange-900/60', text: 'text-orange-700 dark:text-orange-300' },
                                                     { key: 'C', bg: 'bg-red-200 dark:bg-red-900/60', text: 'text-red-700 dark:text-red-300' },
                                                     { key: 'B', bg: 'bg-yellow-200 dark:bg-yellow-900/60', text: 'text-yellow-700 dark:text-yellow-300' },
                                                     { key: 'B+', bg: 'bg-yellow-300 dark:bg-yellow-800/60', text: 'text-yellow-800 dark:text-yellow-200' },
@@ -1551,7 +1553,7 @@ const GradePage = () => {
                                                     { key: 'A+', bg: 'bg-green-200 dark:bg-green-900/60', text: 'text-green-700 dark:text-green-300' },
                                                 ];
                                                 return (
-                                                    <div className="grid grid-cols-6 border-b border-neutral-200 dark:border-dark-border">
+                                                    <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-dark-border">
                                                         {levels.map(l => {
                                                             const count = (counts as Record<string, number>)[l.key];
                                                             const pct = total > 0 ? Math.round((count / total) * 100) : 0;

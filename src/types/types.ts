@@ -25,7 +25,7 @@ export interface EvaluationCriterion {
 }
 
 export type AchievementLevel = 'C' | 'B' | 'A' | 'AD';
-export type ParticipationLevel = 'F' | 'C' | 'B' | 'B+' | 'A' | 'A+';
+export type ParticipationLevel = 'F' | 'J' | 'C' | 'B' | 'B+' | 'A' | 'A+';
 
 export interface EvaluationMatrix {
     id: string;

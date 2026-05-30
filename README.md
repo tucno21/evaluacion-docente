@@ -75,7 +75,7 @@ EvalDocenteRubricas/
     │
     ├── pages/
     │   ├── HomePage.tsx          # Pagina principal: lista de aulas (classrooms)
-    │   ├── GradePage.tsx         # Detalle de aula: matrices de evaluacion + exportar Excel
+    │   ├── GradePage.tsx         # Detalle de aula: matrices de evaluacion + exportar Excel + buscador de reportes (por criterio y por estudiante)
     │   ├── EvaluationPage.tsx    # Pagina de evaluacion: grilla de criterios por estudiante
     │   ├── StudentsPage.tsx      # Gestion de estudiantes (CRUD + importar Excel)
     │   ├── ConfigPage.tsx        # Backup/restore/clear de IndexedDB

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, FileDown } from 'lucide-react'; // Added Copy, FileDown and EyeOff icon
+import { Plus, Calendar, ClipboardList, X, Trash2, Pencil, CheckCircle, Copy, FileDown, Search } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useHeaderStore } from '../store/useHeaderStore';
@@ -63,6 +63,257 @@ const GradePage = () => {
     const [exportStartDate, setExportStartDate] = useState<string>('');
     const [exportEndDate, setExportEndDate] = useState<string>('');
     const [exportErrors, setExportErrors] = useState<Record<string, string>>({});
+
+    // Search modal states
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+    const [searchTab, setSearchTab] = useState<'criterio' | 'estudiante'>('criterio');
+    const [searchKeyword, setSearchKeyword] = useState('');
+    const [searchStartDate, setSearchStartDate] = useState('');
+    const [searchEndDate, setSearchEndDate] = useState('');
+    const [searchErrors, setSearchErrors] = useState<Record<string, string>>({});
+    const [isSearching, setIsSearching] = useState(false);
+
+    type CriterionSearchResult = {
+        studentId: string;
+        studentName: string;
+        evaluations: {
+            matrixId: string;
+            matrixName: string;
+            matrixDate: string;
+            criterionId: string;
+            level: string;
+        }[];
+    };
+    const [criterionResults, setCriterionResults] = useState<CriterionSearchResult[]>([]);
+    const [matchedCriterionColumns, setMatchedCriterionColumns] = useState<{
+        matrixId: string;
+        matrixName: string;
+        matrixDate: string;
+        criterionId: string;
+        criterionName: string;
+    }[]>([]);
+
+    type StudentSearchResult = {
+        matrixId: string;
+        matrixName: string;
+        matrixDate: string;
+        participationLevel: string;
+        criteriaSummary: { C: number; B: number; A: number; AD: number };
+    };
+    const [studentResults, setStudentResults] = useState<StudentSearchResult[]>([]);
+    const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+    const [studentSearchQuery, setStudentSearchQuery] = useState('');
+
+    const filteredStudentsForSearch = students
+        .filter(s => s.gradeSectionId === currentGradeSectionId)
+        .filter(s => studentSearchQuery
+            ? s.fullName.toLowerCase().includes(studentSearchQuery.toLowerCase())
+            : true
+        )
+        .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+    const handleQuickDateRange = (weeks: number) => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const endStr = `${year}-${month}-${day}`;
+        const start = new Date(now);
+        start.setDate(start.getDate() - weeks * 7);
+        const sy = start.getFullYear();
+        const sm = String(start.getMonth() + 1).padStart(2, '0');
+        const sd = String(start.getDate()).padStart(2, '0');
+        const startStr = `${sy}-${sm}-${sd}`;
+        setSearchStartDate(startStr);
+        setSearchEndDate(endStr);
+        setSearchErrors(prev => ({ ...prev, searchStartDate: '', searchEndDate: '' }));
+    };
+
+    const handleSearchCriterion = async () => {
+        const newErrors: Record<string, string> = {};
+        if (!searchKeyword.trim()) {
+            newErrors.searchKeyword = 'Ingresa un criterio de búsqueda';
+        }
+        if (!searchStartDate) {
+            newErrors.searchStartDate = 'La fecha de inicio es obligatoria';
+        }
+        if (!searchEndDate) {
+            newErrors.searchEndDate = 'La fecha de fin es obligatoria';
+        }
+        if (searchStartDate && searchEndDate && new Date(searchStartDate) > new Date(searchEndDate)) {
+            newErrors.searchEndDate = 'La fecha de fin no puede ser anterior a la de inicio';
+        }
+        setSearchErrors(newErrors);
+        if (Object.keys(newErrors).length > 0) return;
+
+        setIsSearching(true);
+        try {
+            const keyword = searchKeyword.trim().toLowerCase();
+            const start = parseLocalDate(searchStartDate);
+            const end = parseLocalDate(searchEndDate);
+            end.setHours(23, 59, 59, 999);
+
+            const filteredMatrices = evaluationMatrices.filter(m => {
+                const d = parseLocalDate(m.date);
+                return d >= start && d <= end;
+            }).sort((a, b) => parseLocalDate(a.date).getTime() - parseLocalDate(b.date).getTime());
+
+            const columns: typeof matchedCriterionColumns = [];
+            for (const matrix of filteredMatrices) {
+                const matched = matrix.criteria.find(c =>
+                    c.name.toLowerCase().includes(keyword)
+                );
+                if (matched) {
+                    columns.push({
+                        matrixId: matrix.id,
+                        matrixName: matrix.name,
+                        matrixDate: matrix.date,
+                        criterionId: matched.id,
+                        criterionName: matched.name,
+                    });
+                }
+            }
+            setMatchedCriterionColumns(columns);
+
+            if (columns.length === 0) {
+                setCriterionResults([]);
+                setIsSearching(false);
+                return;
+            }
+
+            const allStudentEvals = await getAllStudentEvaluations();
+            const classroomStudentEvals = allStudentEvals.filter(se =>
+                columns.some(c => c.matrixId === se.matrixId)
+            );
+
+            const classroomStudents = students
+                .filter(s => s.gradeSectionId === currentGradeSectionId)
+                .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+            const results: CriterionSearchResult[] = classroomStudents.map(student => ({
+                studentId: student.id,
+                studentName: student.fullName,
+                evaluations: columns.map(col => {
+                    const studentEval = classroomStudentEvals.find(
+                        se => se.studentId === student.id && se.matrixId === col.matrixId
+                    );
+                    const criterionEval = studentEval?.criteriaEvaluations.find(
+                        ce => ce.criterionId === col.criterionId
+                    );
+                    return {
+                        matrixId: col.matrixId,
+                        matrixName: col.matrixName,
+                        matrixDate: col.matrixDate,
+                        criterionId: col.criterionId,
+                        level: criterionEval?.level || '',
+                    };
+                }),
+            }));
+            setCriterionResults(results);
+        } catch (error) {
+            console.error('Error en búsqueda por criterio:', error);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleSearchStudent = async () => {
+        const newErrors: Record<string, string> = {};
+        if (!selectedStudentId) {
+            newErrors.selectedStudent = 'Selecciona un estudiante';
+        }
+        if (!searchStartDate) {
+            newErrors.searchStartDate = 'La fecha de inicio es obligatoria';
+        }
+        if (!searchEndDate) {
+            newErrors.searchEndDate = 'La fecha de fin es obligatoria';
+        }
+        if (searchStartDate && searchEndDate && new Date(searchStartDate) > new Date(searchEndDate)) {
+            newErrors.searchEndDate = 'La fecha de fin no puede ser anterior a la de inicio';
+        }
+        setSearchErrors(newErrors);
+        if (Object.keys(newErrors).length > 0) return;
+
+        setIsSearching(true);
+        try {
+            const start = parseLocalDate(searchStartDate);
+            const end = parseLocalDate(searchEndDate);
+            end.setHours(23, 59, 59, 999);
+
+            const filteredMatrices = evaluationMatrices.filter(m => {
+                const d = parseLocalDate(m.date);
+                return d >= start && d <= end;
+            }).sort((a, b) => parseLocalDate(a.date).getTime() - parseLocalDate(b.date).getTime());
+
+            const allParticipationEvals = await getAllParticipationEvaluations();
+            const allStudentEvals = await getAllStudentEvaluations();
+
+            const results: StudentSearchResult[] = filteredMatrices.map(matrix => {
+                const participation = allParticipationEvals.find(
+                    pe => pe.studentId === selectedStudentId && pe.matrixId === matrix.id
+                );
+                const studentEval = allStudentEvals.find(
+                    se => se.studentId === selectedStudentId && se.matrixId === matrix.id
+                );
+                const summary = { C: 0, B: 0, A: 0, AD: 0 };
+                if (studentEval) {
+                    for (const ce of studentEval.criteriaEvaluations) {
+                        if (ce.level in summary) {
+                            summary[ce.level as keyof typeof summary]++;
+                        }
+                    }
+                }
+                return {
+                    matrixId: matrix.id,
+                    matrixName: matrix.name,
+                    matrixDate: matrix.date,
+                    participationLevel: participation?.level || '',
+                    criteriaSummary: summary,
+                };
+            });
+            setStudentResults(results);
+        } catch (error) {
+            console.error('Error en búsqueda por estudiante:', error);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const closeSearchModal = () => {
+        setIsSearchModalOpen(false);
+        setSearchKeyword('');
+        setSearchStartDate('');
+        setSearchEndDate('');
+        setSearchErrors({});
+        setCriterionResults([]);
+        setMatchedCriterionColumns([]);
+        setStudentResults([]);
+        setSelectedStudentId('');
+        setStudentSearchQuery('');
+        setIsSearching(false);
+    };
+
+    const getLevelColor = (level: string) => {
+        switch (level) {
+            case 'C': return 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700';
+            case 'B': return 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700';
+            case 'A': return 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700';
+            case 'AD': return 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700';
+            default: return 'bg-neutral-100 text-neutral-400 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700';
+        }
+    };
+
+    const getParticipationColor = (level: string) => {
+        switch (level) {
+            case 'F': return 'bg-neutral-200 text-neutral-600 border-neutral-300 dark:bg-neutral-700 dark:text-neutral-300 dark:border-neutral-600';
+            case 'C': return 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700';
+            case 'B': return 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700';
+            case 'B+': return 'bg-yellow-200 text-yellow-800 border-yellow-400 dark:bg-yellow-900/60 dark:text-yellow-200 dark:border-yellow-600';
+            case 'A': return 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700';
+            case 'A+': return 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700';
+            default: return 'bg-neutral-100 text-neutral-400 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-500 dark:border-neutral-700';
+        }
+    };
 
     // Función para obtener la fecha local actual en formato YYYY-MM-DD
     const getLocalDateString = () => {
@@ -477,7 +728,14 @@ const GradePage = () => {
     return (
         <div className="min-h-full space-y-6">
             <div className="flex gap-4 justify-center">
-                {/* Botón para exportar a Excel (nuevo) */}
+                <Button
+                    onClick={() => setIsSearchModalOpen(true)}
+                    variant="accent"
+                    aria-label="Buscar reporte"
+                >
+                    <Search className="h-4 w-4" />
+                    <span>Buscar Reporte</span>
+                </Button>
                 <div className="flex justify-center">
                     <Button
                         onClick={() => setIsExportModalOpen(true)}
@@ -977,6 +1235,375 @@ const GradePage = () => {
                                     Generar Excel
                                 </Button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de búsqueda */}
+            {isSearchModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-bg-card dark:bg-dark-bg-card rounded-2xl shadow-2xl w-[95%] md:w-[90%] lg:max-w-6xl lg:w-full max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-100 dark:border-dark-border">
+                            <h2 className="text-lg font-bold text-neutral-900 dark:text-dark-text-primary">
+                                Buscar Reporte
+                            </h2>
+                            <button
+                                onClick={closeSearchModal}
+                                className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded-lg transition-colors"
+                                aria-label="Cerrar modal de búsqueda"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="flex border-b border-neutral-200 dark:border-dark-border">
+                            <button
+                                onClick={() => {
+                                    setSearchTab('criterio');
+                                    setCriterionResults([]);
+                                    setMatchedCriterionColumns([]);
+                                    setStudentResults([]);
+                                    setSearchErrors({});
+                                }}
+                                className={`flex-1 py-3 px-4 text-sm font-semibold transition-colors ${searchTab === 'criterio'
+                                    ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
+                                    : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                                    }`}
+                            >
+                                Por Criterio
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setSearchTab('estudiante');
+                                    setCriterionResults([]);
+                                    setMatchedCriterionColumns([]);
+                                    setStudentResults([]);
+                                    setSearchErrors({});
+                                }}
+                                className={`flex-1 py-3 px-4 text-sm font-semibold transition-colors ${searchTab === 'estudiante'
+                                    ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
+                                    : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300'
+                                    }`}
+                            >
+                                Por Estudiante
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-5">
+                            {searchTab === 'criterio' && (
+                                <>
+                                    <Inputs
+                                        label="Buscar Criterio"
+                                        id="searchCriterion"
+                                        type="text"
+                                        value={searchKeyword}
+                                        onChange={(e) => setSearchKeyword(e.target.value)}
+                                        placeholder="Ej: uniforme, responsabilidad..."
+                                        error={searchErrors.searchKeyword}
+                                    />
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuickDateRange(2)}
+                                            className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-neutral-200 dark:border-dark-border text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400 dark:hover:border-primary-700 transition-colors"
+                                        >
+                                            2 últimas semanas
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuickDateRange(4)}
+                                            className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-neutral-200 dark:border-dark-border text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400 dark:hover:border-primary-700 transition-colors"
+                                        >
+                                            4 últimas semanas
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuickDateRange(8)}
+                                            className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-neutral-200 dark:border-dark-border text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400 dark:hover:border-primary-700 transition-colors"
+                                        >
+                                            8 últimas semanas
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Inputs
+                                            label="Fecha de Inicio"
+                                            id="searchStartDate"
+                                            type="date"
+                                            value={searchStartDate}
+                                            onChange={(e) => setSearchStartDate(e.target.value)}
+                                            error={searchErrors.searchStartDate}
+                                        />
+                                        <Inputs
+                                            label="Fecha de Fin"
+                                            id="searchEndDate"
+                                            type="date"
+                                            value={searchEndDate}
+                                            onChange={(e) => setSearchEndDate(e.target.value)}
+                                            error={searchErrors.searchEndDate}
+                                        />
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        onClick={handleSearchCriterion}
+                                        disabled={isSearching}
+                                        className="w-full"
+                                    >
+                                        {isSearching ? 'Buscando...' : 'Buscar Criterio'}
+                                    </Button>
+
+                                    {matchedCriterionColumns.length === 0 && criterionResults.length === 0 && searchKeyword && !isSearching && searchStartDate && searchEndDate && (
+                                        <div className="text-center py-6 text-neutral-500 dark:text-neutral-400">
+                                            No se encontraron criterios que coincidan con "{searchKeyword}" en el rango de fechas seleccionado.
+                                        </div>
+                                    )}
+
+                                    {criterionResults.length > 0 && matchedCriterionColumns.length > 0 && (
+                                        <div className="mt-4 overflow-x-auto border border-neutral-200 dark:border-dark-border rounded-xl">
+                                            <div className="bg-gradient-to-br from-accent-100 via-accent-200 to-accent-300 dark:from-accent-800 dark:via-accent-900 dark:to-black px-4 py-2 border-b border-neutral-200 dark:border-dark-border">
+                                                <p className="text-sm font-bold text-neutral-800 dark:text-accent-200">
+                                                    Resultados para: "{matchedCriterionColumns[0]?.criterionName}"
+                                                </p>
+                                                <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                                                    {matchedCriterionColumns.length} evaluacion{matchedCriterionColumns.length !== 1 ? 'es' : ''} encontrada{matchedCriterionColumns.length !== 1 ? 's' : ''}
+                                                </p>
+                                            </div>
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-dark-border">
+                                                        <th className="text-left px-3 py-2 font-semibold text-neutral-700 dark:text-neutral-300 min-w-[40px] w-[40px]">N°</th>
+                                                        <th className="text-left px-3 py-2 font-semibold text-neutral-700 dark:text-neutral-300 min-w-[160px]">Estudiante</th>
+                                                        {matchedCriterionColumns.map(col => (
+                                                            <th key={col.matrixId} className="text-center px-2 py-2 font-semibold text-neutral-700 dark:text-neutral-300 min-w-[90px]">
+                                                                <div className="text-xs">{parseLocalDate(col.matrixDate).toLocaleDateString('es', { day: '2-digit', month: 'short' })}</div>
+                                                            </th>
+                                                        ))}
+                                                        <th className="text-center px-3 py-2 font-semibold text-neutral-700 dark:text-neutral-300 min-w-[120px] border-l border-neutral-200 dark:border-dark-border">
+                                                            <div className="text-xs">Resumen</div>
+                                                            <div className="grid grid-cols-4 gap-1 text-[10px] mt-1">
+                                                                <span className="text-red-600 dark:text-red-400">C</span>
+                                                                <span className="text-yellow-600 dark:text-yellow-400">B</span>
+                                                                <span className="text-blue-600 dark:text-blue-400">A</span>
+                                                                <span className="text-green-600 dark:text-green-400">AD</span>
+                                                            </div>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {criterionResults.map((result, idx) => {
+                                                        const totalEvaluated = result.evaluations.filter(e => e.level).length;
+                                                        const counts = { C: 0, B: 0, A: 0, AD: 0 };
+                                                        result.evaluations.forEach(ev => {
+                                                            if (ev.level in counts) counts[ev.level as keyof typeof counts]++;
+                                                        });
+                                                        return (
+                                                            <tr key={result.studentId} className="border-b border-neutral-100 dark:border-dark-border hover:bg-neutral-50 dark:hover:bg-neutral-800/30">
+                                                                <td className="px-3 py-2 text-neutral-500 dark:text-neutral-400">{idx + 1}</td>
+                                                                <td className="px-3 py-2 font-medium text-neutral-800 dark:text-dark-text-primary truncate max-w-[200px]">{result.studentName}</td>
+                                                                {result.evaluations.map(ev => (
+                                                                    <td key={ev.matrixId} className="px-2 py-2 text-center">
+                                                                        <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-bold border ${getLevelColor(ev.level)}`}>
+                                                                            {ev.level || 'N/E'}
+                                                                        </span>
+                                                                    </td>
+                                                                ))}
+                                                                <td className="px-3 py-2 text-center border-l border-neutral-200 dark:border-dark-border">
+                                                                    {totalEvaluated > 0 ? (
+                                                                        <div className="grid grid-cols-4 gap-1 text-[10px] font-bold">
+                                                                            <span className={counts.C > 0 ? 'text-red-600 dark:text-red-400' : 'text-neutral-300 dark:text-neutral-600'}>{Math.round((counts.C / totalEvaluated) * 100)}%</span>
+                                                                            <span className={counts.B > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-neutral-300 dark:text-neutral-600'}>{Math.round((counts.B / totalEvaluated) * 100)}%</span>
+                                                                            <span className={counts.A > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-neutral-300 dark:text-neutral-600'}>{Math.round((counts.A / totalEvaluated) * 100)}%</span>
+                                                                            <span className={counts.AD > 0 ? 'text-green-600 dark:text-green-400' : 'text-neutral-300 dark:text-neutral-600'}>{Math.round((counts.AD / totalEvaluated) * 100)}%</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-xs text-neutral-400">-</span>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {searchTab === 'estudiante' && (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-neutral-700 dark:text-dark-text-secondary mb-1">
+                                            Buscar Estudiante
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={studentSearchQuery}
+                                            onChange={(e) => setStudentSearchQuery(e.target.value)}
+                                            placeholder="Escribe el nombre del estudiante..."
+                                            className="w-full px-4 py-2.5 border border-neutral-300 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm bg-white dark:bg-dark-bg-card text-neutral-800 dark:text-dark-text-primary placeholder-neutral-400 dark:placeholder-neutral-500"
+                                        />
+                                        {searchErrors.selectedStudent && (
+                                            <p className="text-error-600 text-sm mt-1">{searchErrors.selectedStudent}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="max-h-40 overflow-y-auto border border-neutral-200 dark:border-dark-border rounded-xl">
+                                        {filteredStudentsForSearch.length === 0 ? (
+                                            <div className="p-4 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                                                No se encontraron estudiantes
+                                            </div>
+                                        ) : (
+                                            filteredStudentsForSearch.map(student => (
+                                                <button
+                                                    key={student.id}
+                                                    onClick={() => {
+                                                        setSelectedStudentId(student.id);
+                                                        setStudentSearchQuery(student.fullName);
+                                                        setSearchErrors(prev => ({ ...prev, selectedStudent: '' }));
+                                                    }}
+                                                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-neutral-100 dark:border-dark-border last:border-b-0 ${selectedStudentId === student.id
+                                                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                                        : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/30 text-neutral-700 dark:text-neutral-300'
+                                                        }`}
+                                                >
+                                                    {student.fullName}
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuickDateRange(2)}
+                                            className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-neutral-200 dark:border-dark-border text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400 dark:hover:border-primary-700 transition-colors"
+                                        >
+                                            2 últimas semanas
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuickDateRange(4)}
+                                            className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-neutral-200 dark:border-dark-border text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400 dark:hover:border-primary-700 transition-colors"
+                                        >
+                                            4 últimas semanas
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuickDateRange(8)}
+                                            className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-neutral-200 dark:border-dark-border text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400 dark:hover:border-primary-700 transition-colors"
+                                        >
+                                            8 últimas semanas
+                                        </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Inputs
+                                            label="Fecha de Inicio"
+                                            id="searchStartDate"
+                                            type="date"
+                                            value={searchStartDate}
+                                            onChange={(e) => setSearchStartDate(e.target.value)}
+                                            error={searchErrors.searchStartDate}
+                                        />
+                                        <Inputs
+                                            label="Fecha de Fin"
+                                            id="searchEndDate"
+                                            type="date"
+                                            value={searchEndDate}
+                                            onChange={(e) => setSearchEndDate(e.target.value)}
+                                            error={searchErrors.searchEndDate}
+                                        />
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        onClick={handleSearchStudent}
+                                        disabled={isSearching}
+                                        className="w-full"
+                                    >
+                                        {isSearching ? 'Buscando...' : 'Buscar Estudiante'}
+                                    </Button>
+
+                                    {studentResults.length > 0 && (
+                                        <div className="mt-4 overflow-x-auto border border-neutral-200 dark:border-dark-border rounded-xl">
+                                            <div className="bg-gradient-to-br from-accent-100 via-accent-200 to-accent-300 dark:from-accent-800 dark:via-accent-900 dark:to-black px-4 py-2 border-b border-neutral-200 dark:border-dark-border">
+                                                <p className="text-sm font-bold text-neutral-800 dark:text-accent-200">
+                                                    {students.find(s => s.id === selectedStudentId)?.fullName}
+                                                </p>
+                                                <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                                                    {studentResults.length} evaluacion{studentResults.length !== 1 ? 'es' : ''} en el rango de fechas
+                                                </p>
+                                            </div>
+                                            {studentResults.length > 0 && (() => {
+                                                const total = studentResults.filter(r => r.participationLevel).length;
+                                                const counts = { F: 0, C: 0, B: 0, 'B+': 0, A: 0, 'A+': 0 };
+                                                studentResults.forEach(r => {
+                                                    if (r.participationLevel && r.participationLevel in counts) {
+                                                        (counts as Record<string, number>)[r.participationLevel]++;
+                                                    }
+                                                });
+                                                const levels: { key: string; bg: string; text: string }[] = [
+                                                    { key: 'F', bg: 'bg-neutral-300 dark:bg-neutral-600', text: 'text-neutral-700 dark:text-neutral-200' },
+                                                    { key: 'C', bg: 'bg-red-200 dark:bg-red-900/60', text: 'text-red-700 dark:text-red-300' },
+                                                    { key: 'B', bg: 'bg-yellow-200 dark:bg-yellow-900/60', text: 'text-yellow-700 dark:text-yellow-300' },
+                                                    { key: 'B+', bg: 'bg-yellow-300 dark:bg-yellow-800/60', text: 'text-yellow-800 dark:text-yellow-200' },
+                                                    { key: 'A', bg: 'bg-blue-200 dark:bg-blue-900/60', text: 'text-blue-700 dark:text-blue-300' },
+                                                    { key: 'A+', bg: 'bg-green-200 dark:bg-green-900/60', text: 'text-green-700 dark:text-green-300' },
+                                                ];
+                                                return (
+                                                    <div className="grid grid-cols-6 border-b border-neutral-200 dark:border-dark-border">
+                                                        {levels.map(l => {
+                                                            const count = (counts as Record<string, number>)[l.key];
+                                                            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                                                            return (
+                                                                <div key={l.key} className={`${l.bg} px-2 py-2 text-center border-r border-neutral-200 dark:border-dark-border last:border-r-0`}>
+                                                                    <div className={`text-xs font-bold ${l.text}`}>{l.key}</div>
+                                                                    <div className={`text-sm font-bold ${l.text}`}>{pct}%</div>
+                                                                    <div className={`text-[10px] ${l.text} opacity-70`}>{count}/{total}</div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            })()}
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-dark-border">
+                                                        <th className="text-left px-3 py-2 font-semibold text-neutral-700 dark:text-neutral-300 min-w-[80px]">Fecha</th>
+                                                        <th className="text-left px-3 py-2 font-semibold text-neutral-700 dark:text-neutral-300 min-w-[120px]">Evaluación</th>
+                                                        <th className="text-center px-3 py-2 font-semibold text-neutral-700 dark:text-neutral-300 min-w-[60px]">PT</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {studentResults.map(result => {
+                                                        return (
+                                                            <tr key={result.matrixId} className="border-b border-neutral-100 dark:border-dark-border hover:bg-neutral-50 dark:hover:bg-neutral-800/30">
+                                                                <td className="px-3 py-2 text-neutral-600 dark:text-neutral-400 text-xs">
+                                                                    {parseLocalDate(result.matrixDate).toLocaleDateString('es', { day: '2-digit', month: 'short' })}
+                                                                </td>
+                                                                <td className="px-3 py-2 font-medium text-neutral-800 dark:text-dark-text-primary text-xs truncate max-w-[160px]">
+                                                                    {result.matrixName}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center">
+                                                                    <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-bold border ${getParticipationColor(result.participationLevel)}`}>
+                                                                        {result.participationLevel || 'N/E'}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+
+                                    {studentResults.length === 0 && selectedStudentId && !isSearching && searchStartDate && searchEndDate && (
+                                        <div className="text-center py-6 text-neutral-500 dark:text-neutral-400">
+                                            No se encontraron evaluaciones para este estudiante en el rango de fechas seleccionado.
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -4,13 +4,16 @@ import Button from '../components/Button';
 import { useHeaderStore } from '../store/useHeaderStore';
 import Toast from '../components/Toast';
 import ModalAlert from '../components/ModalAlert';
+import { RefreshCw } from 'lucide-react';
 
 const ConfigPage: React.FC = () => {
     const { backupData, restoreData, checkDataExists, clearDatabase, loading, error } = useAppStore();
     const [isRestoreDisabled, setIsRestoreDisabled] = useState(true);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [toastInfo, setToastInfo] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [toastInfo, setToastInfo] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { setHeaderTitle } = useHeaderStore();
@@ -126,6 +129,44 @@ const ConfigPage: React.FC = () => {
         }
     };
 
+    const handleUpdateApp = async () => {
+        if (!navigator.onLine) {
+            setToastInfo({ message: 'No hay conexión a internet. Conéctate para actualizar la aplicación.', type: 'error' });
+            setIsUpdateModalOpen(false);
+            return;
+        }
+
+        setIsUpdating(true);
+        setToastInfo({ message: 'Creando copia de seguridad antes de actualizar...', type: 'info' });
+
+        try {
+            await backupData();
+
+            setToastInfo({ message: 'Copia de seguridad descargada. Actualizando aplicación...', type: 'info' });
+
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
+            }
+
+            const cacheNames = await caches.keys();
+            for (const name of cacheNames) {
+                await caches.delete(name);
+            }
+
+            setToastInfo({ message: 'Caché eliminado. Recargando aplicación...', type: 'success' });
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } catch {
+            setToastInfo({ message: 'Error al actualizar la aplicación. Intenta de nuevo.', type: 'error' });
+            setIsUpdating(false);
+        }
+    };
+
     return (
         <div className="p-4 md:p-6">
             <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-200">Gestión de Datos</h1>
@@ -189,6 +230,24 @@ const ConfigPage: React.FC = () => {
                 )}
             </div>
 
+            <div className="bg-white dark:bg-dark-bg-card shadow-md rounded-lg p-6 mt-8 border border-blue-200 dark:border-blue-800">
+                <h2 className="text-xl font-semibold mb-4 text-blue-700 dark:text-blue-400 border-b dark:border-gray-700 pb-2">Actualizar Aplicación</h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Descarga automáticamente una copia de seguridad y luego actualiza la aplicación a la última versión disponible.
+                    <span className="font-bold text-blue-600 dark:text-blue-400"> Se requiere conexión a internet.</span>
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+                    Tus datos (estudiantes, evaluaciones, aulas) no se eliminan. Solo se renueva la caché de la aplicación.
+                </p>
+                <Button
+                    onClick={() => setIsUpdateModalOpen(true)}
+                    disabled={isUpdating}
+                >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isUpdating ? 'animate-spin' : ''}`} />
+                    {isUpdating ? 'Actualizando...' : 'Actualizar Aplicación'}
+                </Button>
+            </div>
+
             <div className="bg-white dark:bg-dark-bg-card shadow-md rounded-lg p-6 mt-8 border border-red-200 dark:border-red-800">
                 <h2 className="text-xl font-semibold mb-4 text-red-700 dark:text-red-400 border-b dark:border-gray-700 pb-2">Zona de Peligro</h2>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -209,6 +268,21 @@ const ConfigPage: React.FC = () => {
                     onConfirm={() => {
                         setIsDeleteModalOpen(false);
                         handleClearDatabase();
+                    }}
+                />
+            )}
+
+            {isUpdateModalOpen && (
+                <ModalAlert
+                    isOpen={isUpdateModalOpen}
+                    onClose={() => setIsUpdateModalOpen(false)}
+                    title="Actualizar Aplicación"
+                    message="Se creará una copia de seguridad automática y luego se actualizará la aplicación a la última versión. Tus datos no se eliminan. ¿Deseas continuar?"
+                    confirmText="Sí, Actualizar"
+                    cancelText="Cancelar"
+                    onConfirm={() => {
+                        setIsUpdateModalOpen(false);
+                        handleUpdateApp();
                     }}
                 />
             )}

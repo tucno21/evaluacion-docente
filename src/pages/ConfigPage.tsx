@@ -144,13 +144,8 @@ const ConfigPage: React.FC = () => {
 
             setToastInfo({ message: 'Copia de seguridad descargada. Actualizando aplicación...', type: 'info' });
 
-            if ('serviceWorker' in navigator) {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                for (const registration of registrations) {
-                    await registration.unregister();
-                }
-            }
-
+            // Limpiar TODOS los caches para forzar la descarga de la última versión.
+            // NO se desregistra el Service Worker: así el modo offline nunca se interrumpe.
             const cacheNames = await caches.keys();
             for (const name of cacheNames) {
                 await caches.delete(name);
